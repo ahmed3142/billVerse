@@ -29,6 +29,7 @@ export default async function AdminLayout({
         <nav className="nav">
           <Link href="/admin/cycles">Cycles</Link>
           <Link href="/admin/categories">Categories</Link>
+          <Link href="/admin/flats">Flats</Link>
           <Link href="/admin/audit">Audit</Link>
           <Link href="/status">Status Board</Link>
           <form action={signOut}>

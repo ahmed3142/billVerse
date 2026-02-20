@@ -16,10 +16,11 @@ insert into public.charge_categories(name, type) values
   ('Internet line','individual')
 on conflict (name, type) do nothing;
 
--- Example flats: 101 to 130 (adjust to your building)
-insert into public.flats (flat_no)
-select gs::text
-from generate_series(101, 130) gs
+-- Example flats in block format (A1, A2... adjust to your building)
+insert into public.flats (flat_no) values
+  ('A1'), ('A2'), ('A3'), ('A4'),
+  ('B1'), ('B2'), ('B3'), ('B4'),
+  ('C1'), ('C2'), ('C3'), ('C4')
 on conflict (flat_no) do nothing;
 
 -- Profiles must reference existing auth.users rows.

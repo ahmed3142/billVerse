@@ -19,32 +19,34 @@ export default function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className="card">
-      <table>
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th key={column.id}>{column.header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length > 0 ? (
-            rows.map((row, index) => (
-              <tr key={index}>
-                {columns.map((column) => (
-                  <td key={column.id}>{column.cell(row)}</td>
-                ))}
-              </tr>
-            ))
-          ) : (
+      <div className="table-scroll">
+        <table>
+          <thead>
             <tr>
-              <td colSpan={columns.length} className="muted">
-                {emptyText}
-              </td>
+              {columns.map((column) => (
+                <th key={column.id}>{column.header}</th>
+              ))}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.length > 0 ? (
+              rows.map((row, index) => (
+                <tr key={index}>
+                  {columns.map((column) => (
+                    <td key={column.id}>{column.cell(row)}</td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length} className="muted">
+                  {emptyText}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

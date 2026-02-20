@@ -9,6 +9,12 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const profile = await requireProfile();
+  const supabase = createClient();
+
+  const { data: flat } = profile.flat_id
+    ? await supabase.from("flats").select("flat_no").eq("id", profile.flat_id).maybeSingle()
+    : { data: null };
+  const signedInAs = flat?.flat_no ?? profile.user_id;
 
   async function signOut() {
     "use server";
@@ -21,9 +27,9 @@ export default async function UserLayout({
     <section className="stack">
       <header className="spaced card">
         <div>
-          <h2 style={{ margin: 0 }}>Building Bill Manager</h2>
+          <h2 style={{ margin: 0 }}>1Bill</h2>
           <p className="muted" style={{ margin: 0 }}>
-            Signed in as {profile.email ?? profile.user_id} ({profile.role})
+            Signed in as {signedInAs} ({profile.role})
           </p>
         </div>
         <nav className="nav">
@@ -38,6 +44,12 @@ export default async function UserLayout({
         </nav>
       </header>
       {children}
+      <nav className="bottom-nav">
+        <Link href="/me">Dashboard</Link>
+        <Link href="/me">My Bills</Link>
+        <Link href="/status">Compare</Link>
+        <Link href="/reset-password">Settings</Link>
+      </nav>
     </section>
   );
 }

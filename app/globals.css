@@ -1,15 +1,19 @@
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --primary: #0f766e;
-  --primary-soft: #ccfbf1;
-  --danger: #b91c1c;
-  --warning: #b45309;
-  --success: #166534;
-  --radius: 10px;
+  --bg: #090d14;
+  --bg-soft: #0f1622;
+  --surface: rgba(18, 27, 41, 0.56);
+  --surface-strong: rgba(29, 41, 60, 0.65);
+  --text: #e8eef7;
+  --muted: #9fb0c6;
+  --line: rgba(173, 190, 214, 0.2);
+  --primary: #58a6ff;
+  --danger: #ff7b7b;
+  --warning: #ffc266;
+  --success: #52d59a;
+  --gold: #f6c35a;
+  --purple: #9873ff;
+  --blue-accent: #5aa9ff;
+  --radius: 14px;
 }
 
 * {
@@ -20,20 +24,37 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: radial-gradient(circle at top right, #e0f2fe 0%, var(--bg) 35%);
+  min-height: 100%;
+  background:
+    radial-gradient(900px circle at 8% -15%, rgba(90, 169, 255, 0.26), transparent 58%),
+    radial-gradient(720px circle at 100% 0%, rgba(152, 115, 255, 0.22), transparent 52%),
+    linear-gradient(180deg, var(--bg-soft), var(--bg));
   color: var(--text);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 35%),
+    radial-gradient(520px circle at 50% 0%, rgba(255, 255, 255, 0.06), transparent 65%);
+  z-index: -1;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .container {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 24px 16px 92px;
 }
 
 .card {
@@ -41,6 +62,11 @@ a {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  box-shadow:
+    0 18px 36px rgba(2, 8, 18, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11);
 }
 
 .stack {
@@ -75,35 +101,79 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: 10px;
+  background: rgba(11, 18, 29, 0.64);
+  color: var(--text);
   padding: 8px 10px;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(88, 166, 255, 0.72);
+  background: rgba(15, 23, 36, 0.82);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
 }
 
 button {
-  background: var(--primary);
-  color: #fff;
-  border: 0;
-  border-radius: 8px;
+  background: linear-gradient(180deg, #69b4ff, #3f8eff);
+  color: #f8fbff;
+  border: 1px solid rgba(110, 180, 255, 0.34);
+  border-radius: 10px;
   padding: 8px 12px;
   cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(33, 86, 161, 0.42);
+  filter: saturate(1.03);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 button.secondary {
-  background: #334155;
+  background: linear-gradient(180deg, rgba(111, 128, 152, 0.82), rgba(77, 92, 114, 0.82));
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 button.warning {
-  background: var(--warning);
+  background: linear-gradient(180deg, #ffd28a, #f8b754);
+  border-color: rgba(245, 158, 11, 0.26);
+  color: #3b2300;
 }
 
 button.danger {
-  background: var(--danger);
+  background: linear-gradient(180deg, #ff9f9f, #ff6c6c);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  background: rgba(15, 24, 38, 0.62);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 th,
@@ -117,6 +187,7 @@ th {
   font-size: 13px;
   color: var(--muted);
   font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .muted {
@@ -132,17 +203,17 @@ th {
 }
 
 .pill-paid {
-  background: #dcfce7;
+  background: rgba(22, 163, 74, 0.12);
   color: var(--success);
 }
 
 .pill-due {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.12);
   color: var(--danger);
 }
 
 .pill-partial {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.17);
   color: var(--warning);
 }
 
@@ -153,8 +224,113 @@ th {
 }
 
 .nav a {
-  background: var(--surface);
+  background: var(--surface-strong);
   border: 1px solid var(--line);
   padding: 7px 11px;
-  border-radius: 8px;
+  border-radius: 10px;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.nav a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.14);
+  border-color: rgba(88, 166, 255, 0.48);
+  background: rgba(67, 91, 125, 0.86);
+}
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 14px 10px 94px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .spaced {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .row {
+    gap: 8px;
+  }
+
+  .nav {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .nav a,
+  .nav form,
+  .nav form button {
+    width: 100%;
+  }
+
+  .nav a {
+    text-align: center;
+  }
+
+  button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .row button {
+    width: auto;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  table {
+    min-width: 560px;
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 8px 6px;
+  }
+
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 40;
+    padding: 8px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(16, 25, 38, 0.84);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  }
+
+  .bottom-nav a {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 8px 4px;
+    border-radius: 10px;
+    color: #d8e4f5;
+  }
+
+  .bottom-nav a:hover {
+    background: rgba(88, 166, 255, 0.34);
+  }
 }

@@ -68,6 +68,7 @@ npm run dev
 - `/admin/cycles/[id]/individual`
 - `/admin/cycles/[id]/payments`
 - `/admin/categories`
+- `/admin/flats`
 - `/admin/audit`
 
 ## Billing Formula
@@ -90,4 +91,5 @@ Status:
 - Cycle publish runs `publish_cycle(cycle_id)` RPC.
 - Recalculate runs `recalculate_cycle(cycle_id)` RPC.
 - Publish flow attempts to call `/functions/v1/send-cycle-emails`.
-- The status board view only exposes `(month, flat_no, status)`.
+- User status board exposes `(month, flat_no, status)`, while admin sees due amount too.
+- Audit records are visible in admin panel at `/admin/audit`.
