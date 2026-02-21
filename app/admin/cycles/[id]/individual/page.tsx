@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import AutoDismissNotice from "@/components/AutoDismissNotice";
 import IndividualChargesGrid from "@/components/forms/IndividualChargesGrid";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -102,7 +103,7 @@ export default async function IndividualChargesPage({
 
   return (
     <section className="stack">
-      {searchParams?.saved ? <div className="card notice-success">Individual charges saved.</div> : null}
+      <AutoDismissNotice message={searchParams?.saved ? "Individual charges saved." : null} />
       <div className="spaced">
         <div>
           <h1>Individual Charges</h1>

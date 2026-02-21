@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import CollapsibleHeaderOptions from "@/components/CollapsibleHeaderOptions";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,16 +33,18 @@ export default async function UserLayout({
             Signed in as {signedInAs} ({profile.role})
           </p>
         </div>
-        <nav className="nav">
-          <Link href="/me">My Statement</Link>
-          <Link href="/status">Status Board</Link>
-          {profile.role === "admin" ? <Link href="/admin/cycles">Admin Panel</Link> : null}
-          <form action={signOut}>
-            <button type="submit" className="secondary">
-              Sign out
-            </button>
-          </form>
-        </nav>
+        <CollapsibleHeaderOptions>
+          <nav className="nav">
+            <Link href="/me">My Statement</Link>
+            <Link href="/status">Status Board</Link>
+            {profile.role === "admin" ? <Link href="/admin/cycles">Admin Panel</Link> : null}
+            <form action={signOut}>
+              <button type="submit" className="secondary">
+                Sign out
+              </button>
+            </form>
+          </nav>
+        </CollapsibleHeaderOptions>
       </header>
       {children}
       <nav className="bottom-nav">

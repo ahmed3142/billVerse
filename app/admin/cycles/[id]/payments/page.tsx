@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import AutoDismissNotice from "@/components/AutoDismissNotice";
 import DataTable from "@/components/DataTable";
 import PaymentForm from "@/components/forms/PaymentForm";
 import { formatMoney } from "@/lib/money";
@@ -77,7 +78,7 @@ export default async function PaymentsPage({
 
   return (
     <section className="stack">
-      {searchParams?.saved ? <div className="card notice-success">Payment saved.</div> : null}
+      <AutoDismissNotice message={searchParams?.saved ? "Payment saved." : null} />
       <div className="spaced">
         <div>
           <h1>Payments</h1>

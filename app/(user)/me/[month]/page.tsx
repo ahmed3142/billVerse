@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
@@ -30,6 +31,7 @@ export default async function StatementByMonthPage({
 }: {
   params: { month: string };
 }) {
+  noStore();
   const profile = await requireProfile();
   const supabase = createClient();
 

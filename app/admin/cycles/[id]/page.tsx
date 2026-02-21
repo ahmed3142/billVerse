@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import AutoDismissNotice from "@/components/AutoDismissNotice";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMonthLabel } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,6 +18,10 @@ type BillingCycle = {
 
 type StatementStatusRow = {
   status: string;
+  opening_due: number;
+  new_charges: number;
+  paid_amount: number;
+  closing_due: number;
 };
 
 export default async function CycleDashboardPage({
@@ -37,6 +43,7 @@ export default async function CycleDashboardPage({
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
+    revalidatePath("/me", "layout");
     redirect(`/admin/cycles/${params.id}?saved=published`);
   }
 
@@ -47,6 +54,7 @@ export default async function CycleDashboardPage({
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
+    revalidatePath("/me", "layout");
     redirect(`/admin/cycles/${params.id}?saved=recalculated`);
   }
 
@@ -83,10 +91,12 @@ export default async function CycleDashboardPage({
 
   const { data: statementRows } = await supabase
     .from("statements")
-    .select("status")
+    .select("status, opening_due, new_charges, paid_amount, closing_due")
     .eq("cycle_id", cycle.id);
 
-  const statuses = ((statementRows as StatementStatusRow[] | null) ?? []).reduce(
+  const statementMetrics = (statementRows as StatementStatusRow[] | null) ?? [];
+
+  const statuses = statementMetrics.reduce(
     (acc, item) => {
       acc.total += 1;
       if (item.status === "paid") acc.paid += 1;
@@ -96,6 +106,21 @@ export default async function CycleDashboardPage({
     },
     { total: 0, paid: 0, partial: 0, due: 0 }
   );
+
+  const totals = statementMetrics.reduce(
+    (acc, item) => {
+      acc.openingDue += Number(item.opening_due ?? 0);
+      acc.newCharges += Number(item.new_charges ?? 0);
+      acc.paid += Number(item.paid_amount ?? 0);
+      acc.closingDue += Number(item.closing_due ?? 0);
+      return acc;
+    },
+    { openingDue: 0, newCharges: 0, paid: 0, closingDue: 0 }
+  );
+
+  const outstandingDue = statementMetrics.reduce((sum, item) => sum + Math.max(Number(item.closing_due), 0), 0);
+  const creditBalance = statementMetrics.reduce((sum, item) => sum + Math.abs(Math.min(Number(item.closing_due), 0)), 0);
+  const formulaCheck = Number((totals.openingDue + totals.newCharges - totals.paid - totals.closingDue).toFixed(2));
   const saved = searchParams?.saved;
   const savedMessage =
     saved === "published"
@@ -110,7 +135,7 @@ export default async function CycleDashboardPage({
 
   return (
     <section className="stack">
-      {savedMessage ? <div className="card notice-success">{savedMessage}</div> : null}
+      <AutoDismissNotice message={savedMessage} />
       <div className="spaced">
         <div>
           <h1>Cycle Dashboard</h1>
@@ -160,6 +185,21 @@ export default async function CycleDashboardPage({
           <span>Partial: {statuses.partial}</span>
           <span>Due: {statuses.due}</span>
         </div>
+      </div>
+
+      <div className="card stack">
+        <h3 style={{ margin: 0 }}>Calculation Summary</h3>
+        <div className="summary-grid">
+          <span>Total Opening Due: {formatMoney(totals.openingDue)}</span>
+          <span>Total New Charges: {formatMoney(totals.newCharges)}</span>
+          <span>Total Paid Amount: {formatMoney(totals.paid)}</span>
+          <span>Total Closing Due: {formatMoney(totals.closingDue)}</span>
+          <span>Outstanding Due (positive balances): {formatMoney(outstandingDue)}</span>
+          <span>Credit Balance (negative balances): {formatMoney(creditBalance)}</span>
+        </div>
+        <p className="muted" style={{ margin: 0 }}>
+          Formula check (opening + new - paid - closing) should be 0. Current: {formulaCheck.toFixed(2)}
+        </p>
       </div>
     </section>
   );

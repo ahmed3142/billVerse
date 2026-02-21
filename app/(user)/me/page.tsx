@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_noStore as noStore } from "next/cache";
 import DataTable from "@/components/DataTable";
 import MonthPicker from "@/components/MonthPicker";
 import StatusBadge from "@/components/StatusBadge";
@@ -34,6 +35,7 @@ type BreakdownRow = {
 };
 
 export default async function MyStatementPage() {
+  noStore();
   const profile = await requireProfile();
   const supabase = createClient();
 
