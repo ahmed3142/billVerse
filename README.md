@@ -16,7 +16,7 @@ Next.js + Supabase app for monthly building billing cycles with:
 
 - Frontend: Next.js App Router + TypeScript
 - Backend: Supabase Postgres, Auth, RLS, RPC
-- Emails: Supabase Edge Function (`send-cycle-emails`) + Resend API
+- Emails: Supabase Edge Function (`resend-email`) + Resend API
 
 ## Quick Start
 
@@ -90,6 +90,6 @@ Status:
 
 - Cycle publish runs `publish_cycle(cycle_id)` RPC.
 - Recalculate runs `recalculate_cycle(cycle_id)` RPC.
-- Publish flow attempts to call `/functions/v1/send-cycle-emails`.
+- Publish flow attempts to call `/functions/v1/resend-email`.
 - User status board exposes `(month, flat_no, status)`, while admin sees due amount too.
 - Audit records are visible in admin panel at `/admin/audit`.

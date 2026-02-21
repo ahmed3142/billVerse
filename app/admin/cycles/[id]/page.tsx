@@ -37,7 +37,7 @@ export default async function CycleDashboardPage({
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     let resultPath = `/admin/cycles/${params.id}?saved=published`;
     if (baseUrl && token) {
-      const response = await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
+      const response = await fetch(`${baseUrl}/functions/v1/resend-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export default async function CycleDashboardPage({
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     let resultPath = `/admin/cycles/${params.id}?saved=emails`;
     if (baseUrl && token) {
-      const response = await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
+      const response = await fetch(`${baseUrl}/functions/v1/resend-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
