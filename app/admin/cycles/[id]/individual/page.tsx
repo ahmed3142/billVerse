@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import IndividualChargesGrid from "@/components/forms/IndividualChargesGrid";
 import { requireAdmin } from "@/lib/auth";
@@ -21,9 +22,11 @@ type ExistingCharge = {
 };
 
 export default async function IndividualChargesPage({
-  params
+  params,
+  searchParams
 }: {
   params: { id: string };
+  searchParams?: { saved?: string };
 }) {
   const profile = await requireAdmin();
   const supabase = createClient();
@@ -71,6 +74,7 @@ export default async function IndividualChargesPage({
     }
 
     revalidatePath(`/admin/cycles/${params.id}/individual`);
+    redirect(`/admin/cycles/${params.id}/individual?saved=1`);
   }
 
   const [{ data: flatsData }, { data: categoriesData }, { data: chargesData }] = await Promise.all([
@@ -98,6 +102,7 @@ export default async function IndividualChargesPage({
 
   return (
     <section className="stack">
+      {searchParams?.saved ? <div className="card notice-success">Individual charges saved.</div> : null}
       <div className="spaced">
         <div>
           <h1>Individual Charges</h1>

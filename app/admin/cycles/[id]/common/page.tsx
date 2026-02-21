@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import DataTable from "@/components/DataTable";
 import CommonChargesForm from "@/components/forms/CommonChargesForm";
@@ -21,9 +22,11 @@ type CommonChargeRow = {
 };
 
 export default async function CommonChargesPage({
-  params
+  params,
+  searchParams
 }: {
   params: { id: string };
+  searchParams?: { saved?: string };
 }) {
   const profile = await requireAdmin();
   const supabase = createClient();
@@ -52,6 +55,7 @@ export default async function CommonChargesPage({
     );
 
     revalidatePath(`/admin/cycles/${params.id}/common`);
+    redirect(`/admin/cycles/${params.id}/common?saved=1`);
   }
 
   const [{ data: categoriesData }, { data: chargesData }] = await Promise.all([
@@ -73,6 +77,7 @@ export default async function CommonChargesPage({
 
   return (
     <section className="stack">
+      {searchParams?.saved ? <div className="card notice-success">Common charge saved.</div> : null}
       <div className="spaced">
         <div>
           <h1>Common Charges</h1>

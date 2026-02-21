@@ -242,6 +242,30 @@ th {
   background: rgba(67, 91, 125, 0.86);
 }
 
+.quick-links {
+  display: grid;
+  gap: 10px;
+}
+
+.quick-links a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(20, 30, 45, 0.62);
+}
+
+.quick-links a:hover {
+  background: rgba(67, 91, 125, 0.86);
+  border-color: rgba(88, 166, 255, 0.48);
+}
+
+.notice-success {
+  border-color: rgba(82, 213, 154, 0.5);
+  background: rgba(18, 62, 46, 0.52);
+  color: #b9f3d9;
+}
+
 .bottom-nav {
   display: none;
 }

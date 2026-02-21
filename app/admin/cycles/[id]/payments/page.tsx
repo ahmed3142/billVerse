@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import DataTable from "@/components/DataTable";
 import PaymentForm from "@/components/forms/PaymentForm";
@@ -23,9 +24,11 @@ type PaymentRow = {
 };
 
 export default async function PaymentsPage({
-  params
+  params,
+  searchParams
 }: {
   params: { id: string };
+  searchParams?: { saved?: string };
 }) {
   const profile = await requireAdmin();
   const supabase = createClient();
@@ -57,6 +60,7 @@ export default async function PaymentsPage({
     });
 
     revalidatePath(`/admin/cycles/${params.id}/payments`);
+    redirect(`/admin/cycles/${params.id}/payments?saved=1`);
   }
 
   const [{ data: flatsData }, { data: paymentsData }] = await Promise.all([
@@ -73,6 +77,7 @@ export default async function PaymentsPage({
 
   return (
     <section className="stack">
+      {searchParams?.saved ? <div className="card notice-success">Payment saved.</div> : null}
       <div className="spaced">
         <div>
           <h1>Payments</h1>

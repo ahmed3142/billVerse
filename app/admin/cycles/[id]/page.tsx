@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMonthLabel } from "@/lib/dates";
@@ -19,18 +19,17 @@ type StatementStatusRow = {
 };
 
 export default async function CycleDashboardPage({
-  params
+  params,
+  searchParams
 }: {
   params: { id: string };
+  searchParams?: { saved?: string };
 }) {
   await requireAdmin();
   const supabase = createClient();
 
-  async function publishCycle() {
-    "use server";
+  async function triggerCycleEmails() {
     const supabase = createClient();
-    await supabase.rpc("publish_cycle", { p_cycle_id: params.id });
-
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -45,10 +44,18 @@ export default async function CycleDashboardPage({
         body: JSON.stringify({ cycleId: params.id })
       }).catch(() => null);
     }
+  }
+
+  async function publishCycle() {
+    "use server";
+    const supabase = createClient();
+    await supabase.rpc("publish_cycle", { p_cycle_id: params.id });
+    await triggerCycleEmails();
 
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
+    redirect(`/admin/cycles/${params.id}?saved=published`);
   }
 
   async function recalculateCycle() {
@@ -58,6 +65,7 @@ export default async function CycleDashboardPage({
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
+    redirect(`/admin/cycles/${params.id}?saved=recalculated`);
   }
 
   async function lockCycle() {
@@ -69,6 +77,14 @@ export default async function CycleDashboardPage({
       .eq("id", params.id)
       .eq("status", "published");
     revalidatePath(`/admin/cycles/${params.id}`);
+    redirect(`/admin/cycles/${params.id}?saved=locked`);
+  }
+
+  async function resendEmails() {
+    "use server";
+    await triggerCycleEmails();
+    revalidatePath(`/admin/cycles/${params.id}`);
+    redirect(`/admin/cycles/${params.id}?saved=emails`);
   }
 
   const { data: cycleData } = await supabase
@@ -98,9 +114,21 @@ export default async function CycleDashboardPage({
     },
     { total: 0, paid: 0, partial: 0, due: 0 }
   );
+  const saved = searchParams?.saved;
+  const savedMessage =
+    saved === "published"
+      ? "Cycle published and email notifications triggered."
+      : saved === "recalculated"
+        ? "Cycle recalculated successfully."
+        : saved === "locked"
+          ? "Cycle locked successfully."
+          : saved === "emails"
+            ? "Email resend triggered."
+            : null;
 
   return (
     <section className="stack">
+      {savedMessage ? <div className="card notice-success">{savedMessage}</div> : null}
       <div className="spaced">
         <div>
           <h1>Cycle Dashboard</h1>
@@ -124,12 +152,17 @@ export default async function CycleDashboardPage({
               Lock
             </button>
           </form>
+          <form action={resendEmails}>
+            <button type="submit" className="secondary" disabled={cycle.status === "draft"}>
+              Resend Emails
+            </button>
+          </form>
         </div>
       </div>
 
       <div className="card stack">
         <h3 style={{ margin: 0 }}>Quick Links</h3>
-        <div className="row">
+        <div className="quick-links">
           <Link href={`/admin/cycles/${cycle.id}/common`}>Common Charges</Link>
           <Link href={`/admin/cycles/${cycle.id}/individual`}>Individual Charges</Link>
           <Link href={`/admin/cycles/${cycle.id}/payments`}>Payments</Link>
