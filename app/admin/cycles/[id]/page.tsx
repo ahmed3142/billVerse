@@ -23,7 +23,7 @@ export default async function CycleDashboardPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams?: { saved?: string };
+  searchParams?: { saved?: string; sent?: string; failed?: string };
 }) {
   await requireAdmin();
   const supabase = createClient();
@@ -35,8 +35,9 @@ export default async function CycleDashboardPage({
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let resultPath = `/admin/cycles/${params.id}?saved=published`;
     if (baseUrl && token) {
-      await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
+      const response = await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,12 +45,31 @@ export default async function CycleDashboardPage({
         },
         body: JSON.stringify({ cycleId: params.id })
       }).catch(() => null);
+
+      if (!response) {
+        resultPath = `/admin/cycles/${params.id}?saved=published_email_error`;
+      } else {
+        const payload = (await response.json().catch(() => null)) as
+          | { sent?: number; failed?: number; message?: string }
+          | null;
+        const sent = Number(payload?.sent ?? 0);
+        const failed = Number(payload?.failed ?? 0);
+        if (!response.ok) {
+          resultPath = `/admin/cycles/${params.id}?saved=published_email_error`;
+        } else if (payload?.message?.toLowerCase().includes("no recipients")) {
+          resultPath = `/admin/cycles/${params.id}?saved=published_no_recipients`;
+        } else {
+          resultPath = `/admin/cycles/${params.id}?saved=published_email_result&sent=${sent}&failed=${failed}`;
+        }
+      }
+    } else {
+      resultPath = `/admin/cycles/${params.id}?saved=published_email_skipped`;
     }
 
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
-    redirect(`/admin/cycles/${params.id}?saved=published`);
+    redirect(resultPath);
   }
 
   async function recalculateCycle() {
@@ -80,8 +100,9 @@ export default async function CycleDashboardPage({
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let resultPath = `/admin/cycles/${params.id}?saved=emails`;
     if (baseUrl && token) {
-      await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
+      const response = await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,9 +110,28 @@ export default async function CycleDashboardPage({
         },
         body: JSON.stringify({ cycleId: params.id })
       }).catch(() => null);
+
+      if (!response) {
+        resultPath = `/admin/cycles/${params.id}?saved=emails_error`;
+      } else {
+        const payload = (await response.json().catch(() => null)) as
+          | { sent?: number; failed?: number; message?: string }
+          | null;
+        const sent = Number(payload?.sent ?? 0);
+        const failed = Number(payload?.failed ?? 0);
+        if (!response.ok) {
+          resultPath = `/admin/cycles/${params.id}?saved=emails_error`;
+        } else if (payload?.message?.toLowerCase().includes("no recipients")) {
+          resultPath = `/admin/cycles/${params.id}?saved=emails_no_recipients`;
+        } else {
+          resultPath = `/admin/cycles/${params.id}?saved=emails_result&sent=${sent}&failed=${failed}`;
+        }
+      }
+    } else {
+      resultPath = `/admin/cycles/${params.id}?saved=emails_skipped`;
     }
     revalidatePath(`/admin/cycles/${params.id}`);
-    redirect(`/admin/cycles/${params.id}?saved=emails`);
+    redirect(resultPath);
   }
 
   const { data: cycleData } = await supabase
@@ -122,15 +162,33 @@ export default async function CycleDashboardPage({
     { total: 0, paid: 0, partial: 0, due: 0 }
   );
   const saved = searchParams?.saved;
+  const sent = Number(searchParams?.sent ?? 0);
+  const failed = Number(searchParams?.failed ?? 0);
   const savedMessage =
     saved === "published"
-      ? "Cycle published and email notifications triggered."
+      ? "Cycle published successfully."
+      : saved === "published_email_result"
+        ? `Cycle published. Emails sent: ${sent}, failed: ${failed}.`
+        : saved === "published_no_recipients"
+          ? "Cycle published. No recipients found for email notifications."
+          : saved === "published_email_skipped"
+            ? "Cycle published, but email was skipped (missing session token or base URL)."
+            : saved === "published_email_error"
+              ? "Cycle published, but email request failed. Check Edge Function logs."
       : saved === "recalculated"
         ? "Cycle recalculated successfully."
         : saved === "locked"
           ? "Cycle locked successfully."
           : saved === "emails"
-            ? "Email resend triggered."
+            ? "Email resend request processed."
+            : saved === "emails_result"
+              ? `Email resend complete. Sent: ${sent}, failed: ${failed}.`
+              : saved === "emails_no_recipients"
+                ? "No recipients found for this cycle."
+                : saved === "emails_skipped"
+                  ? "Email resend skipped (missing session token or base URL)."
+                  : saved === "emails_error"
+                    ? "Email resend failed. Check Edge Function logs."
             : null;
 
   return (
