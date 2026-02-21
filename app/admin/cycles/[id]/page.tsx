@@ -23,7 +23,7 @@ export default async function CycleDashboardPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams?: { saved?: string; sent?: string; failed?: string };
+  searchParams?: { saved?: string };
 }) {
   await requireAdmin();
   const supabase = createClient();
@@ -32,44 +32,12 @@ export default async function CycleDashboardPage({
     "use server";
     const supabase = createClient();
     await supabase.rpc("publish_cycle", { p_cycle_id: params.id });
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    let resultPath = `/admin/cycles/${params.id}?saved=published`;
-    if (baseUrl && token) {
-      const response = await fetch(`${baseUrl}/functions/v1/resend-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ cycleId: params.id })
-      }).catch(() => null);
-
-      if (!response) {
-        resultPath = `/admin/cycles/${params.id}?saved=published_email_error`;
-      } else {
-        const payload = (await response.json().catch(() => null)) as
-          | { sent?: number; failed?: number; message?: string }
-          | null;
-        const sent = Number(payload?.sent ?? 0);
-        const failed = Number(payload?.failed ?? 0);
-        if (!response.ok) {
-          resultPath = `/admin/cycles/${params.id}?saved=published_email_error`;
-        } else if (payload?.message?.toLowerCase().includes("no recipients")) {
-          resultPath = `/admin/cycles/${params.id}?saved=published_no_recipients`;
-        } else {
-          resultPath = `/admin/cycles/${params.id}?saved=published_email_result&sent=${sent}&failed=${failed}`;
-        }
-      }
-    } else {
-      resultPath = `/admin/cycles/${params.id}?saved=published_email_skipped`;
-    }
+    // Email notifications are intentionally disabled in app flow.
 
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
-    redirect(resultPath);
+    redirect(`/admin/cycles/${params.id}?saved=published`);
   }
 
   async function recalculateCycle() {
@@ -96,42 +64,9 @@ export default async function CycleDashboardPage({
 
   async function resendEmails() {
     "use server";
-    const supabase = createClient();
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    let resultPath = `/admin/cycles/${params.id}?saved=emails`;
-    if (baseUrl && token) {
-      const response = await fetch(`${baseUrl}/functions/v1/resend-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ cycleId: params.id })
-      }).catch(() => null);
-
-      if (!response) {
-        resultPath = `/admin/cycles/${params.id}?saved=emails_error`;
-      } else {
-        const payload = (await response.json().catch(() => null)) as
-          | { sent?: number; failed?: number; message?: string }
-          | null;
-        const sent = Number(payload?.sent ?? 0);
-        const failed = Number(payload?.failed ?? 0);
-        if (!response.ok) {
-          resultPath = `/admin/cycles/${params.id}?saved=emails_error`;
-        } else if (payload?.message?.toLowerCase().includes("no recipients")) {
-          resultPath = `/admin/cycles/${params.id}?saved=emails_no_recipients`;
-        } else {
-          resultPath = `/admin/cycles/${params.id}?saved=emails_result&sent=${sent}&failed=${failed}`;
-        }
-      }
-    } else {
-      resultPath = `/admin/cycles/${params.id}?saved=emails_skipped`;
-    }
+    // Email notifications are intentionally disabled in app flow.
     revalidatePath(`/admin/cycles/${params.id}`);
-    redirect(resultPath);
+    redirect(`/admin/cycles/${params.id}?saved=emails_disabled`);
   }
 
   const { data: cycleData } = await supabase
@@ -162,33 +97,15 @@ export default async function CycleDashboardPage({
     { total: 0, paid: 0, partial: 0, due: 0 }
   );
   const saved = searchParams?.saved;
-  const sent = Number(searchParams?.sent ?? 0);
-  const failed = Number(searchParams?.failed ?? 0);
   const savedMessage =
     saved === "published"
-      ? "Cycle published successfully."
-      : saved === "published_email_result"
-        ? `Cycle published. Emails sent: ${sent}, failed: ${failed}.`
-        : saved === "published_no_recipients"
-          ? "Cycle published. No recipients found for email notifications."
-          : saved === "published_email_skipped"
-            ? "Cycle published, but email was skipped (missing session token or base URL)."
-            : saved === "published_email_error"
-              ? "Cycle published, but email request failed. Check Edge Function logs."
+      ? "Cycle published successfully. Email notifications are disabled."
       : saved === "recalculated"
         ? "Cycle recalculated successfully."
         : saved === "locked"
           ? "Cycle locked successfully."
-          : saved === "emails"
-            ? "Email resend request processed."
-            : saved === "emails_result"
-              ? `Email resend complete. Sent: ${sent}, failed: ${failed}.`
-              : saved === "emails_no_recipients"
-                ? "No recipients found for this cycle."
-                : saved === "emails_skipped"
-                  ? "Email resend skipped (missing session token or base URL)."
-                  : saved === "emails_error"
-                    ? "Email resend failed. Check Edge Function logs."
+          : saved === "emails_disabled"
+            ? "Email notifications are disabled."
             : null;
 
   return (
@@ -218,7 +135,7 @@ export default async function CycleDashboardPage({
             </button>
           </form>
           <form action={resendEmails}>
-            <button type="submit" className="secondary" disabled={cycle.status === "draft"}>
+            <button type="submit" className="secondary">
               Resend Emails
             </button>
           </form>
