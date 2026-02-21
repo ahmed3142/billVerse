@@ -28,12 +28,13 @@ export default async function CycleDashboardPage({
   await requireAdmin();
   const supabase = createClient();
 
-  async function triggerCycleEmails() {
+  async function publishCycle() {
+    "use server";
     const supabase = createClient();
+    await supabase.rpc("publish_cycle", { p_cycle_id: params.id });
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
     if (baseUrl && token) {
       await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
         method: "POST",
@@ -44,13 +45,6 @@ export default async function CycleDashboardPage({
         body: JSON.stringify({ cycleId: params.id })
       }).catch(() => null);
     }
-  }
-
-  async function publishCycle() {
-    "use server";
-    const supabase = createClient();
-    await supabase.rpc("publish_cycle", { p_cycle_id: params.id });
-    await triggerCycleEmails();
 
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
@@ -82,7 +76,20 @@ export default async function CycleDashboardPage({
 
   async function resendEmails() {
     "use server";
-    await triggerCycleEmails();
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (baseUrl && token) {
+      await fetch(`${baseUrl}/functions/v1/send-cycle-emails`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ cycleId: params.id })
+      }).catch(() => null);
+    }
     revalidatePath(`/admin/cycles/${params.id}`);
     redirect(`/admin/cycles/${params.id}?saved=emails`);
   }
