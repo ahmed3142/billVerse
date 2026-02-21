@@ -18,6 +18,7 @@ type StatementRow = {
   status: string;
   billing_cycles: {
     month: string;
+    status: "draft" | "published" | "locked";
   };
 };
 
@@ -25,6 +26,17 @@ type BreakdownRow = {
   category_name: string;
   charge_type: string;
   amount: number;
+};
+
+type SnapshotStatementRow = {
+  id: string;
+  cycle_id: string;
+  opening_due: number;
+  new_charges: number;
+  paid_amount: number;
+  closing_due: number;
+  status: string;
+  line_items: BreakdownRow[] | null;
 };
 
 export default async function StatementByMonthPage({
@@ -48,17 +60,42 @@ export default async function StatementByMonthPage({
   const { data } = await supabase
     .from("statements")
     .select(
-      "cycle_id, opening_due, new_charges, paid_amount, closing_due, status, billing_cycles!inner(month)"
+      "cycle_id, opening_due, new_charges, paid_amount, closing_due, status, billing_cycles!inner(month, status)"
     )
     .eq("flat_id", profile.flat_id)
     .eq("billing_cycles.month", month)
     .maybeSingle();
 
   const statement = (data as StatementRow | null) ?? null;
-  const { data: breakdownData } = statement
+  const { data: snapshotData } =
+    statement && statement.billing_cycles.status === "locked"
+      ? await supabase
+          .from("statement_snapshots")
+          .select("id, cycle_id, opening_due, new_charges, paid_amount, closing_due, status, line_items")
+          .eq("cycle_id", statement.cycle_id)
+          .eq("flat_id", profile.flat_id)
+          .maybeSingle()
+      : { data: null };
+
+  const snapshot = (snapshotData as SnapshotStatementRow | null) ?? null;
+  const summary = snapshot
+    ? {
+        opening_due: snapshot.opening_due,
+        new_charges: snapshot.new_charges,
+        paid_amount: snapshot.paid_amount,
+        closing_due: snapshot.closing_due,
+        status: snapshot.status
+      }
+    : statement;
+
+  const { data: breakdownData } = summary && !snapshot && statement
     ? await supabase.rpc("get_my_statement_breakdown", { p_cycle_id: statement.cycle_id })
     : { data: null };
-  const breakdown = (breakdownData as BreakdownRow[] | null) ?? [];
+  const breakdown = snapshot
+    ? (snapshot.line_items ?? [])
+    : ((breakdownData as BreakdownRow[] | null) ?? []);
+  const outstandingDue = summary ? Math.max(Number(summary.closing_due), 0) : 0;
+  const carryCredit = summary ? Math.abs(Math.min(Number(summary.closing_due), 0)) : 0;
 
   return (
     <section className="stack">
@@ -68,30 +105,44 @@ export default async function StatementByMonthPage({
           <p className="muted">{formatMonthLabel(month)}</p>
         </div>
         <div className="row print-hidden">
-          <DownloadStatementPdfButton title={`Statement-${month}`} />
+          <DownloadStatementPdfButton
+            title={`Statement-${month}`}
+            label={snapshot ? "Download Final Invoice PDF" : "Download PDF"}
+          />
           <Link href="/me">Back to My Statement</Link>
         </div>
       </div>
-      {statement ? (
+      {summary ? (
         <div className="card stack">
           <div className="spaced">
             <h3 style={{ margin: 0 }}>Monthly Summary</h3>
-            <StatusBadge status={statement.status} />
+            <StatusBadge status={summary.status} />
+          </div>
+          {snapshot ? (
+            <p className="muted" style={{ margin: 0 }}>
+              Final locked invoice snapshot ID: {snapshot.id}
+            </p>
+          ) : null}
+          <div className="row">
+            <strong>Opening Due:</strong> <span>{formatMoney(summary.opening_due)}</span>
           </div>
           <div className="row">
-            <strong>Opening Due:</strong> <span>{formatMoney(statement.opening_due)}</span>
+            <strong>New Charges:</strong> <span>{formatMoney(summary.new_charges)}</span>
           </div>
           <div className="row">
-            <strong>New Charges:</strong> <span>{formatMoney(statement.new_charges)}</span>
+            <strong>Paid Amount:</strong> <span>{formatMoney(summary.paid_amount)}</span>
           </div>
           <div className="row">
-            <strong>Paid Amount:</strong> <span>{formatMoney(statement.paid_amount)}</span>
+            <strong>Closing Due:</strong> <span>{formatMoney(summary.closing_due)}</span>
           </div>
           <div className="row">
-            <strong>Closing Due:</strong> <span>{formatMoney(statement.closing_due)}</span>
+            <strong>Outstanding Due:</strong> <span>{formatMoney(outstandingDue)}</span>
+          </div>
+          <div className="row">
+            <strong>Carry Credit:</strong> <span>{formatMoney(carryCredit)}</span>
           </div>
           <div className="stack">
-            <h4 style={{ margin: 0 }}>Bill Criteria Breakdown</h4>
+            <h4 style={{ margin: 0 }}>{snapshot ? "Final Invoice Line Items" : "Bill Criteria Breakdown"}</h4>
             <DataTable
               rows={breakdown}
               columns={[
@@ -115,7 +166,7 @@ export default async function StatementByMonthPage({
             />
           </div>
           <div className="row">
-            <strong>Total Bill Amount:</strong> <span>{formatMoney(statement.new_charges)}</span>
+            <strong>Total Bill Amount:</strong> <span>{formatMoney(summary.new_charges)}</span>
           </div>
         </div>
       ) : (

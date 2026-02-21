@@ -2,9 +2,13 @@
 
 type DownloadStatementPdfButtonProps = {
   title: string;
+  label?: string;
 };
 
-export default function DownloadStatementPdfButton({ title }: DownloadStatementPdfButtonProps) {
+export default function DownloadStatementPdfButton({
+  title,
+  label = "Download PDF"
+}: DownloadStatementPdfButtonProps) {
   return (
     <button
       type="button"
@@ -18,7 +22,7 @@ export default function DownloadStatementPdfButton({ title }: DownloadStatementP
         }, 150);
       }}
     >
-      Download PDF
+      {label}
     </button>
   );
 }

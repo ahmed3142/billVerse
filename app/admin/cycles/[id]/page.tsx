@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import AutoDismissNotice from "@/components/AutoDismissNotice";
+import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMonthLabel } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -22,6 +23,15 @@ type StatementStatusRow = {
   new_charges: number;
   paid_amount: number;
   closing_due: number;
+};
+
+type TimelineRow = {
+  id: number;
+  table_name: string;
+  action: string;
+  actor_user_id: string | null;
+  created_at: string;
+  summary: string;
 };
 
 export default async function CycleDashboardPage({
@@ -64,12 +74,13 @@ export default async function CycleDashboardPage({
   async function lockCycle() {
     "use server";
     const supabase = createClient();
-    await supabase
-      .from("billing_cycles")
-      .update({ status: "locked", locked_at: new Date().toISOString() })
-      .eq("id", params.id)
-      .eq("status", "published");
+    const { error } = await supabase.rpc("lock_cycle", { p_cycle_id: params.id });
+    if (error) {
+      redirect(`/admin/cycles/${params.id}?saved=lock_blocked`);
+    }
     revalidatePath(`/admin/cycles/${params.id}`);
+    revalidatePath("/me");
+    revalidatePath("/me", "layout");
     redirect(`/admin/cycles/${params.id}?saved=locked`);
   }
 
@@ -92,12 +103,38 @@ export default async function CycleDashboardPage({
     notFound();
   }
 
-  const { data: statementRows } = await supabase
-    .from("statements")
-    .select("status, opening_due, new_charges, paid_amount, closing_due")
-    .eq("cycle_id", cycle.id);
+  const [
+    { data: statementRows },
+    { count: commonChargesCount },
+    { count: individualChargesCount },
+    { count: paymentsCount },
+    { count: activeFlatsCount },
+    { data: snapshotsData },
+    { data: timelineData }
+  ] = await Promise.all([
+    supabase
+      .from("statements")
+      .select("status, opening_due, new_charges, paid_amount, closing_due")
+      .eq("cycle_id", cycle.id),
+    supabase
+      .from("common_charges")
+      .select("id", { count: "exact", head: true })
+      .eq("cycle_id", cycle.id),
+    supabase
+      .from("individual_charges")
+      .select("id", { count: "exact", head: true })
+      .eq("cycle_id", cycle.id),
+    supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("cycle_id", cycle.id),
+    supabase.from("flats").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("cycle_snapshots").select("id").eq("cycle_id", cycle.id).limit(1),
+    supabase.rpc("get_cycle_timeline", { p_cycle_id: cycle.id })
+  ]);
 
   const statementMetrics = (statementRows as StatementStatusRow[] | null) ?? [];
+  const timelineRows = (timelineData as TimelineRow[] | null) ?? [];
 
   const statuses = statementMetrics.reduce(
     (acc, item) => {
@@ -124,6 +161,11 @@ export default async function CycleDashboardPage({
   const outstandingDue = statementMetrics.reduce((sum, item) => sum + Math.max(Number(item.closing_due), 0), 0);
   const creditBalance = statementMetrics.reduce((sum, item) => sum + Math.abs(Math.min(Number(item.closing_due), 0)), 0);
   const formulaCheck = Number((totals.openingDue + totals.newCharges - totals.paid - totals.closingDue).toFixed(2));
+  const formulaBalanced = Math.abs(formulaCheck) <= 0.01;
+  const snapshotCreated = ((snapshotsData as { id: string }[] | null) ?? []).length > 0;
+  const commonReady = (commonChargesCount ?? 0) > 0;
+  const statementCoverageReady = (activeFlatsCount ?? 0) > 0 && statuses.total === (activeFlatsCount ?? 0);
+  const closeReady = cycle.status === "published" && commonReady && statementCoverageReady && formulaBalanced;
   const saved = searchParams?.saved;
   const savedMessage =
     saved === "published"
@@ -132,6 +174,8 @@ export default async function CycleDashboardPage({
         ? "Cycle recalculated successfully."
         : saved === "recalculate_blocked"
           ? "Locked cycles cannot be recalculated."
+        : saved === "lock_blocked"
+          ? "Cycle cannot be locked from current status."
         : saved === "locked"
           ? "Cycle locked successfully."
           : saved === "emails_disabled"
@@ -189,6 +233,8 @@ export default async function CycleDashboardPage({
           <span>Paid: {statuses.paid}</span>
           <span>Partial: {statuses.partial}</span>
           <span>Due: {statuses.due}</span>
+          <span>Payments entries: {paymentsCount ?? 0}</span>
+          <span>Individual entries: {individualChargesCount ?? 0}</span>
         </div>
       </div>
 
@@ -206,6 +252,30 @@ export default async function CycleDashboardPage({
           Formula check (opening + new - paid - closing) should be 0. Current: {formulaCheck.toFixed(2)}
         </p>
       </div>
+
+      <div className="card stack">
+        <h3 style={{ margin: 0 }}>Monthly Close Checklist</h3>
+        <div className="summary-grid">
+          <span>{commonReady ? "OK" : "Pending"} Common charges added</span>
+          <span>{statementCoverageReady ? "OK" : "Pending"} Statements generated for all active flats</span>
+          <span>{formulaBalanced ? "OK" : "Mismatch"} Formula balanced</span>
+          <span>{cycle.status === "published" ? "Ready" : "Locked/Draft"} Cycle stage for closing</span>
+          <span>{snapshotCreated ? "OK" : "Pending"} Final snapshot created</span>
+          <span>{closeReady ? "Ready to Lock" : "Not Ready"} Lock readiness</span>
+        </div>
+      </div>
+
+      <DataTable
+        rows={timelineRows}
+        columns={[
+          { id: "created_at", header: "Time", cell: (row) => new Date(row.created_at).toLocaleString() },
+          { id: "table_name", header: "Table", cell: (row) => row.table_name },
+          { id: "action", header: "Action", cell: (row) => row.action },
+          { id: "summary", header: "Summary", cell: (row) => row.summary },
+          { id: "actor_user_id", header: "Actor", cell: (row) => row.actor_user_id ?? "-" }
+        ]}
+        emptyText="No activity found for this cycle yet."
+      />
     </section>
   );
 }

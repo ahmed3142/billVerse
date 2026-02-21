@@ -15,7 +15,9 @@ export default async function UserLayout({
   const { data: flat } = profile.flat_id
     ? await supabase.from("flats").select("flat_no").eq("id", profile.flat_id).maybeSingle()
     : { data: null };
-  const signedInAs = flat?.flat_no ?? profile.user_id;
+  const signedInAs =
+    flat?.flat_no ??
+    (profile.role === "admin" ? profile.full_name ?? profile.email ?? profile.user_id : profile.user_id);
 
   async function signOut() {
     "use server";
@@ -28,7 +30,7 @@ export default async function UserLayout({
     <section className="stack">
       <header className="spaced card">
         <div>
-          <h2 style={{ margin: 0 }}>1Bill</h2>
+          <h2 style={{ margin: 0 }}>BillVerse</h2>
           <p className="muted" style={{ margin: 0 }}>
             Signed in as {signedInAs} ({profile.role})
           </p>
