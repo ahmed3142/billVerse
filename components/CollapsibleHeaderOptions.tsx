@@ -35,9 +35,14 @@ export default function CollapsibleHeaderOptions({
       <button
         type="button"
         className="secondary header-toggle-btn"
+        aria-label={open ? "Hide header options" : "Show header options"}
         onClick={() => setOpen((prev) => !prev)}
       >
-        {open ? "Hide Header Options" : "Show Header Options"}
+        <span className="menu-icon" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
       </button>
       <div className={`header-options-panel ${open ? "open" : ""}`}>{children}</div>
     </div>

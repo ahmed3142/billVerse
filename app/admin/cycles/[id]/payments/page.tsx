@@ -37,6 +37,14 @@ export default async function PaymentsPage({
   async function savePayment(formData: FormData) {
     "use server";
     const supabase = createClient();
+    const { data: cycle } = await supabase
+      .from("billing_cycles")
+      .select("status")
+      .eq("id", params.id)
+      .maybeSingle();
+    if (cycle?.status === "locked") {
+      redirect(`/admin/cycles/${params.id}/payments?saved=locked`);
+    }
 
     const flatId = String(formData.get("flat_id") || "");
     const amount = Number(formData.get("amount") || 0);
@@ -75,10 +83,24 @@ export default async function PaymentsPage({
 
   const flats = (flatsData as Flat[] | null) ?? [];
   const rows = (paymentsData as PaymentRow[] | null) ?? [];
+  const { data: cycleData } = await supabase
+    .from("billing_cycles")
+    .select("status")
+    .eq("id", params.id)
+    .maybeSingle();
+  const isLocked = cycleData?.status === "locked";
 
   return (
     <section className="stack">
-      <AutoDismissNotice message={searchParams?.saved ? "Payment saved." : null} />
+      <AutoDismissNotice
+        message={
+          searchParams?.saved === "locked"
+            ? "This cycle is locked. New payments cannot be added."
+            : searchParams?.saved
+              ? "Payment saved."
+              : null
+        }
+      />
       <div className="spaced">
         <div>
           <h1>Payments</h1>
@@ -87,7 +109,11 @@ export default async function PaymentsPage({
         <Link href={`/admin/cycles/${params.id}`}>Back to dashboard</Link>
       </div>
 
-      <PaymentForm flats={flats} action={savePayment} />
+      {isLocked ? (
+        <div className="card notice-success">Cycle is locked. New payments are disabled.</div>
+      ) : (
+        <PaymentForm flats={flats} action={savePayment} />
+      )}
 
       <DataTable
         rows={rows}

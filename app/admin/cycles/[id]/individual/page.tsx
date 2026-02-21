@@ -35,6 +35,14 @@ export default async function IndividualChargesPage({
   async function saveGrid(formData: FormData) {
     "use server";
     const supabase = createClient();
+    const { data: cycle } = await supabase
+      .from("billing_cycles")
+      .select("status")
+      .eq("id", params.id)
+      .maybeSingle();
+    if (cycle?.status === "locked") {
+      redirect(`/admin/cycles/${params.id}/individual?saved=locked`);
+    }
 
     for (const [key, value] of formData.entries()) {
       if (!key.startsWith("entry::")) {
@@ -95,6 +103,12 @@ export default async function IndividualChargesPage({
   const flats = (flatsData as Flat[] | null) ?? [];
   const categories = (categoriesData as Category[] | null) ?? [];
   const existing = (chargesData as ExistingCharge[] | null) ?? [];
+  const { data: cycleData } = await supabase
+    .from("billing_cycles")
+    .select("status")
+    .eq("id", params.id)
+    .maybeSingle();
+  const isLocked = cycleData?.status === "locked";
 
   const values = existing.reduce<Record<string, string>>((acc, item) => {
     acc[`${item.flat_id}:${item.category_id}`] = String(item.amount);
@@ -103,7 +117,15 @@ export default async function IndividualChargesPage({
 
   return (
     <section className="stack">
-      <AutoDismissNotice message={searchParams?.saved ? "Individual charges saved." : null} />
+      <AutoDismissNotice
+        message={
+          searchParams?.saved === "locked"
+            ? "This cycle is locked. Individual charges cannot be edited."
+            : searchParams?.saved
+              ? "Individual charges saved."
+              : null
+        }
+      />
       <div className="spaced">
         <div>
           <h1>Individual Charges</h1>
@@ -112,12 +134,16 @@ export default async function IndividualChargesPage({
         <Link href={`/admin/cycles/${params.id}`}>Back to dashboard</Link>
       </div>
 
-      <IndividualChargesGrid
-        flats={flats}
-        categories={categories}
-        values={values}
-        action={saveGrid}
-      />
+      {isLocked ? (
+        <div className="card notice-success">Cycle is locked. Editing is disabled.</div>
+      ) : (
+        <IndividualChargesGrid
+          flats={flats}
+          categories={categories}
+          values={values}
+          action={saveGrid}
+        />
+      )}
     </section>
   );
 }

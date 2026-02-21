@@ -50,7 +50,10 @@ export default async function CycleDashboardPage({
   async function recalculateCycle() {
     "use server";
     const supabase = createClient();
-    await supabase.rpc("recalculate_cycle", { p_cycle_id: params.id });
+    const { error } = await supabase.rpc("recalculate_cycle", { p_cycle_id: params.id });
+    if (error) {
+      redirect(`/admin/cycles/${params.id}?saved=recalculate_blocked`);
+    }
     revalidatePath(`/admin/cycles/${params.id}`);
     revalidatePath("/status");
     revalidatePath("/me");
@@ -127,6 +130,8 @@ export default async function CycleDashboardPage({
       ? "Cycle published successfully. Email notifications are disabled."
       : saved === "recalculated"
         ? "Cycle recalculated successfully."
+        : saved === "recalculate_blocked"
+          ? "Locked cycles cannot be recalculated."
         : saved === "locked"
           ? "Cycle locked successfully."
           : saved === "emails_disabled"
@@ -150,7 +155,7 @@ export default async function CycleDashboardPage({
             </button>
           </form>
           <form action={recalculateCycle}>
-            <button type="submit" className="secondary" disabled={cycle.status === "draft"}>
+            <button type="submit" className="secondary" disabled={cycle.status !== "published"}>
               Recalculate
             </button>
           </form>

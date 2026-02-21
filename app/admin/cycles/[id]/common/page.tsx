@@ -35,6 +35,14 @@ export default async function CommonChargesPage({
   async function saveCommonCharge(formData: FormData) {
     "use server";
     const supabase = createClient();
+    const { data: cycle } = await supabase
+      .from("billing_cycles")
+      .select("status")
+      .eq("id", params.id)
+      .maybeSingle();
+    if (cycle?.status === "locked") {
+      redirect(`/admin/cycles/${params.id}/common?saved=locked`);
+    }
 
     const categoryId = String(formData.get("category_id") || "");
     const totalAmount = Number(formData.get("total_amount") || 0);
@@ -75,10 +83,24 @@ export default async function CommonChargesPage({
 
   const categories = (categoriesData as Category[] | null) ?? [];
   const rows = (chargesData as CommonChargeRow[] | null) ?? [];
+  const { data: cycleData } = await supabase
+    .from("billing_cycles")
+    .select("status")
+    .eq("id", params.id)
+    .maybeSingle();
+  const isLocked = cycleData?.status === "locked";
 
   return (
     <section className="stack">
-      <AutoDismissNotice message={searchParams?.saved ? "Common charge saved." : null} />
+      <AutoDismissNotice
+        message={
+          searchParams?.saved === "locked"
+            ? "This cycle is locked. Common charges cannot be edited."
+            : searchParams?.saved
+              ? "Common charge saved."
+              : null
+        }
+      />
       <div className="spaced">
         <div>
           <h1>Common Charges</h1>
@@ -87,7 +109,11 @@ export default async function CommonChargesPage({
         <Link href={`/admin/cycles/${params.id}`}>Back to dashboard</Link>
       </div>
 
-      <CommonChargesForm categories={categories} action={saveCommonCharge} />
+      {isLocked ? (
+        <div className="card notice-success">Cycle is locked. Editing is disabled.</div>
+      ) : (
+        <CommonChargesForm categories={categories} action={saveCommonCharge} />
+      )}
 
       <DataTable
         rows={rows}
