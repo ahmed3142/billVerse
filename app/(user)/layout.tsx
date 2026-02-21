@@ -47,12 +47,6 @@ export default async function UserLayout({
         </CollapsibleHeaderOptions>
       </header>
       {children}
-      <nav className="bottom-nav">
-        <Link href="/me">Dashboard</Link>
-        <Link href="/me">My Bills</Link>
-        <Link href="/status">Compare</Link>
-        <Link href="/reset-password">Settings</Link>
-      </nav>
     </section>
   );
 }

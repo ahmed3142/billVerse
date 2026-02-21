@@ -2,6 +2,7 @@ import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import DataTable from "@/components/DataTable";
+import DownloadStatementPdfButton from "@/components/DownloadStatementPdfButton";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMonthLabel, parseMonthParam } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -66,7 +67,10 @@ export default async function StatementByMonthPage({
           <h1>Statement Details</h1>
           <p className="muted">{formatMonthLabel(month)}</p>
         </div>
-        <Link href="/me">Back to My Statement</Link>
+        <div className="row print-hidden">
+          <DownloadStatementPdfButton title={`Statement-${month}`} />
+          <Link href="/me">Back to My Statement</Link>
+        </div>
       </div>
       {statement ? (
         <div className="card stack">

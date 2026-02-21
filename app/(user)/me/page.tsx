@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import DataTable from "@/components/DataTable";
+import DownloadStatementPdfButton from "@/components/DownloadStatementPdfButton";
 import MonthPicker from "@/components/MonthPicker";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMonthLabel, getCurrentMonthStart } from "@/lib/dates";
@@ -84,13 +85,16 @@ export default async function MyStatementPage() {
           <h1>My Statement</h1>
           <p className="muted">Current month: {formatMonthLabel(currentMonth)}</p>
         </div>
-        {monthOptions.length > 0 ? (
-          <MonthPicker
-            options={monthOptions}
-            selected={monthOptions[0].value}
-            basePath="/me"
-          />
-        ) : null}
+        <div className="row print-hidden">
+          {statement ? <DownloadStatementPdfButton title={`Statement-${currentMonth}`} /> : null}
+          {monthOptions.length > 0 ? (
+            <MonthPicker
+              options={monthOptions}
+              selected={monthOptions[0].value}
+              basePath="/me"
+            />
+          ) : null}
+        </div>
       </div>
 
       {statement ? (
