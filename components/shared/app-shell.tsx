@@ -20,6 +20,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const shouldFullyPrefetch = user.role === "admin";
 
   return (
     <div className="min-h-screen bg-app">
@@ -28,6 +29,7 @@ export function AppShell({
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+              prefetch={shouldFullyPrefetch ? true : null}
               className="flex min-w-0 items-center gap-3"
             >
               <div className="rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--accent))] p-2.5 text-[color:var(--primary-foreground)] shadow-[var(--shadow-soft)]">
@@ -75,6 +77,7 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={shouldFullyPrefetch ? true : null}
                   className={cn(
                     "whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition",
                     isActive
