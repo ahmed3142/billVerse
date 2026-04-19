@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f4f6f2;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-subtle: #e9f0ef;
+  --surface-elevated: #f8fbfb;
+  --surface-strong: #0b2230;
+  --foreground: #0f2230;
+  --muted: #607281;
+  --border: rgba(15, 84, 92, 0.12);
+  --border-strong: rgba(15, 84, 92, 0.22);
+  --primary: #0f8b8d;
+  --primary-foreground: #f4fffe;
+  --accent: #f28f62;
+  --accent-foreground: #231208;
+  --success: #1fa971;
+  --warning: #d98b16;
+  --danger: #d64e57;
+  --ring: rgba(15, 139, 141, 0.18);
+  --shadow-soft: 0 16px 40px rgba(16, 54, 66, 0.08);
+  --shadow-strong: 0 20px 60px rgba(9, 36, 48, 0.16);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #061219;
+  --surface: rgba(11, 25, 33, 0.92);
+  --surface-subtle: #10232d;
+  --surface-elevated: #16313d;
+  --surface-strong: #edf8f6;
+  --foreground: #eef7fb;
+  --muted: #98b2c0;
+  --border: rgba(92, 162, 169, 0.16);
+  --border-strong: rgba(92, 162, 169, 0.28);
+  --primary: #56dccf;
+  --primary-foreground: #042221;
+  --accent: #ff9b71;
+  --accent-foreground: #2a140b;
+  --success: #39d897;
+  --warning: #f6b444;
+  --danger: #ff7b81;
+  --ring: rgba(86, 220, 207, 0.22);
+  --shadow-soft: 0 18px 42px rgba(2, 10, 16, 0.32);
+  --shadow-strong: 0 24px 72px rgba(2, 10, 16, 0.44);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html[data-scroll-behavior="smooth"] {
+  scroll-behavior: smooth;
 }
 
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  background-image:
+    radial-gradient(circle at top left, rgba(86, 220, 207, 0.12), transparent 28%),
+    radial-gradient(circle at 80% 12%, rgba(242, 143, 98, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+::selection {
+  background: var(--ring);
+  color: var(--foreground);
+}
+
+.bg-app {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(15, 139, 141, 0.16), transparent 22%),
+    radial-gradient(circle at 85% 18%, rgba(242, 143, 98, 0.14), transparent 18%),
+    radial-gradient(circle at 80% 82%, rgba(31, 169, 113, 0.1), transparent 18%),
+    var(--background);
+}
+
+.surface-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.surface-subtle {
+  background: var(--surface-subtle);
+}
+
+.surface-elevated {
+  background: var(--surface-elevated);
+}
+
+.surface-strong {
+  background: var(--surface-strong);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+.status-paid {
+  border-color: color-mix(in srgb, var(--success) 24%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.status-partial {
+  border-color: color-mix(in srgb, var(--warning) 24%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--warning);
+}
+
+.status-pending {
+  border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
+  }
 }
