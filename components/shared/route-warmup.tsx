@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const DEFAULT_REFRESH_INTERVAL_MS = 60_000;
 
-export function AdminRouteWarmup({
+export function RouteWarmup({
   routes,
   refreshIntervalMs = DEFAULT_REFRESH_INTERVAL_MS,
 }: {

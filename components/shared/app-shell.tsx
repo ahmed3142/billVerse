@@ -1,9 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, LogOut } from "lucide-react";
 
+import { RouteWarmup } from "@/components/shared/route-warmup";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { logoutAction } from "@/lib/actions/auth";
 import { APP_NAME, APP_SUBTITLE } from "@/lib/constants";
@@ -20,16 +22,20 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const shouldFullyPrefetch = user.role === "admin";
+  const prefetchRoutes = navItems.map((item) => item.href);
 
   return (
     <div className="min-h-screen bg-app">
+      <Suspense fallback={null}>
+        <RouteWarmup routes={prefetchRoutes} />
+      </Suspense>
+
       <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--surface)]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
-              prefetch={shouldFullyPrefetch ? true : null}
+              prefetch={true}
               className="flex min-w-0 items-center gap-3"
             >
               <div className="rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--accent))] p-2.5 text-[color:var(--primary-foreground)] shadow-[var(--shadow-soft)]">
@@ -77,7 +83,7 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={shouldFullyPrefetch ? true : null}
+                  prefetch={true}
                   className={cn(
                     "whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition",
                     isActive
