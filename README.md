@@ -1,289 +1,126 @@
 # BillVerse
 
-BillVerse is a full-stack building billing workspace for apartment or flat-based communities. It gives administrators a clean monthly billing workflow and gives residents a simple place to review dues, payment history, notifications, PDFs, and a shareable public collection board.
+<div align="center">
+  <img src="./docs/images/public-status-hero.jpg" alt="BillVerse public status hero" width="100%" />
 
-It is built with Next.js 16, React 19, Tailwind CSS 4, and Supabase Auth + PostgreSQL.
+  <h3>Modern building billing for apartment communities</h3>
+  <p>
+    BillVerse gives administrators a fast monthly billing workspace and gives residents a clean place to review dues, payments, notifications, PDFs, and a shareable public collection board.
+  </p>
 
-## Why BillVerse
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-16.2.4-0F172A?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js 16.2.4" />
+    <img src="https://img.shields.io/badge/React-19.2.4-0EA5E9?style=for-the-badge&logo=react&logoColor=white" alt="React 19.2.4" />
+    <img src="https://img.shields.io/badge/Supabase-Auth%20%2B%20Postgres-16A34A?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4" />
+    <img src="https://img.shields.io/badge/Public_Status-Search%20%2B%20Export-F97316?style=for-the-badge" alt="Public status board" />
+    <img src="https://img.shields.io/badge/PDF-Statement%20Download-E11D48?style=for-the-badge" alt="PDF statements" />
+  </p>
+</div>
 
-- Draft shared and per-flat monthly bills in one place
-- Publish a billing cycle in one step
-- Generate monthly statements automatically
-- Record full or partial payments with notes and payment methods
-- Notify residents when bills are published or payments are recorded
-- Let residents review current dues, billing history, and notifications
-- Export the public collection board to Excel
-- Download statement PDFs for residents
+> [!NOTE]
+> BillVerse is a full-stack billing workspace built for flat or apartment-based buildings. Admins can draft and publish monthly bills, record payments, and monitor collections. Residents can sign in with their assigned email to review statements, history, and notifications. A public status board keeps collection progress transparent without exposing the full app.
 
-## Product Screens
+## Overview
 
-### Public status hero
+BillVerse is designed around one clear monthly workflow:
 
-![BillVerse public status hero](./docs/images/public-status-hero.jpg)
+1. Create or update flats and assign resident emails.
+2. Enter shared building costs and per-flat usage costs.
+3. Publish the monthly cycle.
+4. Generate statements automatically for every active flat.
+5. Record payments over time.
+6. Keep residents informed through notifications, PDFs, and status updates.
 
-### Login and account access
+## Product Tour
 
-![BillVerse login screen](./docs/images/login-screen.jpg)
+| Public Status Hero | Login and Account Access |
+| --- | --- |
+| ![BillVerse public status hero](./docs/images/public-status-hero.jpg) | ![BillVerse login screen](./docs/images/login-screen.jpg) |
 
-### Admin overview
+| Admin Overview | Admin Billing Workspace |
+| --- | --- |
+| ![BillVerse admin dashboard](./docs/images/admin-dashboard.jpg) | ![BillVerse billing workspace](./docs/images/admin-billing.jpg) |
 
-![BillVerse admin dashboard](./docs/images/admin-dashboard.jpg)
+| Public Collections Board |
+| --- |
+| ![BillVerse public collections board](./docs/images/public-collections.jpg) |
 
-### Admin billing workspace
+## What It Does
 
-![BillVerse billing workspace](./docs/images/admin-billing.jpg)
+- Draft common monthly building charges in one place
+- Enter per-flat monthly usage for electricity, water, gas, dish, and internet
+- Generate resident statements automatically during publish
+- Carry forward previous unpaid balances
+- Record full or partial payments with notes and payment method
+- Notify residents when bills are published and when payments are recorded
+- Let residents download PDF statements and review billing history
+- Share a public status board with search, filters, sorting, and export
 
-### Public collections board
+## Experience By Role
 
-![BillVerse public collections board](./docs/images/public-collections.jpg)
+| Role | Main Value |
+| --- | --- |
+| `admin` | Manage flats, prepare the month, publish bills, record payments, and monitor collection progress |
+| `user` | View the current bill, download the PDF, review history, and check notifications |
+| `public` | View the latest published status board with search, filters, and exports without signing in |
+
+## Billing Flow At A Glance
+
+| Stage | Purpose |
+| --- | --- |
+| `Flat setup` | Create flats and assign resident emails before sign-up |
+| `Common bills` | Enter building-wide charges such as electricity, water, gas, garbage, security, cleaner, and other costs |
+| `Individual bills` | Enter per-flat charges for the selected month |
+| `Publish cycle` | Generate monthly statements, split common share, and mark the cycle as published |
+| `Notifications` | Inform residents that new bills are ready |
+| `Payment recording` | Track collections, partial payments, and outstanding balances |
+| `Public status` | Share progress through the status board and exports |
+
+```text
+Admin setup flats
+   -> Create common bills
+   -> Fill individual bills
+   -> Publish billing cycle
+   -> Generate monthly statements
+   -> Notify residents
+   -> Record payments
+   -> Update dashboard and public collection board
+```
 
 ## Core Features
 
-### Admin features
+### Admin Features
 
-- Dashboard with latest cycle, collected total, outstanding amount, and recent payments
-- Flat management with owner name, phone, resident email, and active billing status
-- Shared monthly bill entry for electricity, water, gas, garbage, security, cleaner, and other charges
-- Per-flat monthly bill entry for electricity, water, gas, dish, and internet charges
-- Automatic statement generation during publish
+- Dashboard with latest cycle, active flats, collected total, outstanding amount, and recent payments
+- Flat directory with owner name, phone, resident email, and active billing status
+- Common bill editor for shared monthly building charges
+- Individual bill workspace with auto-save for per-flat entries
+- Monthly summary panel for cycle status, active flats, and publish readiness
 - Payment recording with partial payments, notes, and payment method tracking
-- Resident notifications after publishing bills
-- Resident notifications after recording payments
+- Resident notification creation on publish and payment updates
 
-### Resident features
+### Resident Features
 
-- Shared sign-in and sign-up experience
-- Email-confirmed Supabase Auth flow
+- Shared sign-in and sign-up flow
+- Flat-linked account access based on assigned email
 - Current bill view with common, individual, and previous due breakdown
 - PDF statement download
-- Bill history screen
-- Notification center with mark-all-as-read
+- Billing history view
+- Notification center with read tracking
 - Password reset flow
 
-### Public features
-
-- Public collection board for the latest published billing cycle
-- Search by flat or owner
-- Filter by `All`, `Paid`, `Partial`, and `Pending`
-- Sort by due, paid, or balance
-- Excel export
-
-## How The Product Works
-
-BillVerse separates access by role:
-
-- `admin`: manages flats, drafts bills, publishes monthly cycles, records payments
-- `user`: views the assigned flat's statement, history, notifications, and payment activity
-
-The high-level monthly workflow is:
-
-1. Admin creates or updates flats and assigns resident email addresses.
-2. Admin enters the common monthly costs.
-3. Admin enters per-flat individual usage costs.
-4. Admin publishes the billing cycle.
-5. BillVerse generates monthly statements for every active flat.
-6. BillVerse sends resident notifications that the new bill is ready.
-7. Admin records payments over time.
-8. BillVerse updates balances, statuses, and resident notifications automatically.
-
-## Admin User Manual
-
-### 1. Create the admin account
-
-Before the first real login, create an admin in Supabase Auth and create the matching row in `public.users` with role `admin`.
-
-Example SQL:
-
-```sql
-insert into public.users (id, role)
-values ('YOUR_AUTH_USER_UUID', 'admin')
-on conflict (id) do update set role = 'admin';
-```
-
-### 2. Sign in
-
-Go to `/login` and sign in with the admin email and password. Successful admin login redirects to `/admin/dashboard`.
-
-### 3. Manage flats
-
-Open `/admin/flats` to add or edit flats.
-
-Each flat can store:
-
-- Flat number
-- Owner name
-- Phone number
-- Resident email
-- Active for billing toggle
-
-Important rule:
-
-- Add the resident email before the resident signs up so Supabase can link that account to the correct flat automatically.
-
-### 4. Prepare a billing cycle
-
-Open `/admin/bills/new`.
-
-The billing workspace includes:
-
-- `Common bills` section for building-wide charges
-- `Monthly summary` with active flat count, cycle value, and publish button
-- `Individual bills` table for per-flat charges
-
-Behavior to know:
-
-- Common charges can be saved manually with `Save common bills`
-- Individual bill rows auto-save after about 500ms
-- A published cycle becomes read-only in the billing workspace
-- Per-flat totals include previous unpaid balance
-
-### 5. Publish bills
-
-When the month is ready, click `Publish bills`.
-
-Publishing does all of the following:
-
-- Calls the `publish_billing_cycle` SQL function
-- Generates monthly statements for active flats
-- Calculates common share automatically
-- Carries forward unpaid previous balance
-- Marks the selected common bill as published
-- Creates resident notifications for the new cycle
-
-### 6. Record payments
-
-Open `/admin/payments`.
-
-For each flat statement you can:
-
-- Enter payment amount
-- Choose payment method
-- Add optional notes
-- Save a payment using `Record payment`
-
-BillVerse will:
-
-- Prevent overpayment beyond the remaining balance
-- Update `amount_paid`
-- Recalculate `pending`, `partial`, or `paid` status
-- Save the transaction to `payment_history`
-- Notify the linked resident account
-
-### 7. Monitor collections
-
-Use two screens for monitoring:
-
-- `/admin/dashboard` for a quick internal summary
-- `/status` for the public collection board
-
-The public board shows:
-
-- Total billed
-- Collected amount
-- Outstanding amount
-- Collection rate
-- Search, filtering, sorting, and export
-
-## Resident User Manual
-
-### 1. Create an account
-
-Go to `/login`, switch to `Create account`, and sign up with the exact email address assigned to the flat.
-
-Requirements:
-
-- The email must already exist on the flat record
-- The password must be at least 8 characters
-- The resident should confirm the account from the email received from Supabase
-
-### 2. Sign in
-
-After confirmation, sign in from `/login`. Residents are redirected to `/dashboard`.
-
-### 3. Review the current bill
-
-The resident dashboard shows:
-
-- Current billing period
-- Due date
-- Total due
-- Common charges
-- Individual charges
-- Previous due
-- Payment status
-- Download PDF button
-- Recent notifications
-- Recent payments
-
-### 4. Download the statement PDF
-
-From the current bill page, click `Download PDF`. BillVerse serves the statement document from:
-
-```text
-/api/statements/[statementId]/pdf
-```
-
-### 5. Review bill history
-
-Open `/history` to see previous billing cycles with:
-
-- Period
-- Common share
-- Individual total
-- Previous due
-- Total due
-- Payment status
-
-### 6. Read notifications
-
-Open `/notifications` to see:
-
-- Bill publication alerts
-- Payment received alerts
-- Timestamped updates
-
-Residents can mark all notifications as read from the top action button.
-
-### 7. Reset password
-
-If the resident forgets their password:
-
-1. Go to `/reset-password`
-2. Enter the linked email address
-3. Open the recovery email
-4. Complete the new password form at `/reset-password/update`
-
-## Public Status Board Guide
-
-The public board is available at `/status`.
-
-It is designed for transparent collection monitoring without requiring full app access.
-
-Features:
+### Public Status Features
 
 - Latest published month summary
-- Search by flat number or owner name
-- Status filters with counts
-- Sortable due, paid, and balance columns
-- Mobile-friendly card layout
+- Search by flat number or owner
+- Filters for `All`, `Paid`, `Partial`, and `Pending`
+- Sort by due, paid, and balance
 - Excel export
-- `Open app` button for residents or admins who want to sign in
+- PDF export
+- Quick `Open app` action for residents and admins
 
-Best use cases:
-
-- Sharing current collection progress with residents
-- Reviewing unpaid balances quickly
-- Exporting the visible month for reporting
-
-## Installation Guide
-
-### Prerequisites
-
-- Node.js 20 or newer
-- npm
-- A Supabase project
-- Optional: Vercel for deployment
-- Optional: Vercel KV if you want external caching support
+## Quick Start
 
 ### 1. Clone and install
 
@@ -293,11 +130,9 @@ cd billVerse
 npm install
 ```
 
-### 2. Create local environment variables
+### 2. Configure environment variables
 
-Create `.env.local` in the project root.
-
-Use `.env.example` as your template:
+Create `.env.local` in the project root using `.env.example` as the template:
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -306,36 +141,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Optional:
+> [!IMPORTANT]
+> Keep `SUPABASE_SERVICE_ROLE_KEY` server-only and never commit `.env.local` or any `.env.*` files with real credentials.
 
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be used as an alternative name for the publishable key
-- `KV_REST_API_URL` and matching Vercel KV secrets can be added later if you enable KV-backed caching
-
-### 3. Protect secrets before pushing to GitHub
-
-This repository ignores `.env.*` files and other local secret files through `.gitignore`.
-
-Safe to commit:
-
-- `.env.example`
-
-Never commit:
-
-- `.env.local`
-- `.env.production`
-- `.env.development.local`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- private certificate or key files
-
-If a secret was ever committed in the past:
-
-1. Rotate the secret in Supabase or your provider
-2. Remove it from git history if needed
-3. Commit the cleaned config
-
-### 4. Apply the database schema
-
-Run the Supabase migrations:
+### 3. Apply the database schema
 
 ```bash
 npx supabase login
@@ -343,22 +152,26 @@ npx supabase link --project-ref your-project-ref
 npx supabase db push
 ```
 
-Current migrations:
+Included migrations:
 
 1. `0001_init.sql`
 2. `0002_rls.sql`
 3. `0003_auth_users.sql`
 4. `0004_performance_indexes.sql`
 
-### 5. Create the first admin
+### 4. Create the first admin
 
-In Supabase:
+1. Create the admin user in Supabase Authentication.
+2. Copy the auth user UUID.
+3. Run this SQL:
 
-1. Create the admin user in Authentication
-2. Copy the auth user UUID
-3. Insert the matching `public.users` row with role `admin`
+```sql
+insert into public.users (id, role)
+values ('YOUR_AUTH_USER_UUID', 'admin')
+on conflict (id) do update set role = 'admin';
+```
 
-### 6. Start the app
+### 5. Start the app
 
 ```bash
 npm run dev
@@ -366,30 +179,203 @@ npm run dev
 
 Open:
 
-- `http://localhost:3000/login` for authentication
-- `http://localhost:3000/status` for the public board
+- `http://localhost:3000/login`
+- `http://localhost:3000/status`
 
-### 7. First-time app checklist
+## Admin Guide
 
-1. Sign in as admin
-2. Add flats and resident emails
-3. Create a draft month in the billing workspace
-4. Save common bills
-5. Fill per-flat individual bills
-6. Publish the month
-7. Record at least one payment
-8. Verify resident dashboard, history, notifications, PDF, and public status board
+### 1. Sign in
 
-## Environment Variables
+Admins sign in through `/login` and are redirected to `/admin/dashboard`.
+
+### 2. Manage flats
+
+Use `/admin/flats` to add or update:
+
+- Flat number
+- Owner name
+- Phone
+- Resident email
+- Active billing status
+
+> [!TIP]
+> Add the resident email before the resident signs up. The auth-linking flow uses that email to connect the user account to the correct flat automatically.
+
+### 3. Prepare the month
+
+Use `/admin/bills/new` to manage the selected cycle:
+
+- Enter common building costs
+- Enter per-flat usage costs
+- Review the monthly summary
+- Save common bills manually
+- Let individual bill rows auto-save
+
+Important behavior:
+
+- Published cycles become read-only
+- Per-flat totals can include carried previous due
+- Monthly statements are created when the cycle is published
+
+### 4. Publish the billing cycle
+
+Publishing triggers the billing engine to:
+
+- Generate monthly statements for active flats
+- Split the common total evenly across active flats
+- Carry forward unpaid previous balances
+- Mark the cycle as published
+- Create resident notifications
+
+### 5. Record payments
+
+Use `/admin/payments` to record collections.
+
+For each payment you can store:
+
+- Amount
+- Payment method
+- Notes
+
+BillVerse then:
+
+- Prevents overpayment
+- Updates `amount_paid`
+- Recalculates `pending`, `partial`, or `paid`
+- Saves the transaction to `payment_history`
+- Notifies the linked resident account
+
+### 6. Monitor collections
+
+Use:
+
+- `/admin/dashboard` for the internal admin summary
+- `/status` for the public collection board
+
+## Resident Guide
+
+### 1. Create an account
+
+Residents sign up from `/login` using the exact email already assigned to their flat.
+
+Requirements:
+
+- The email must already exist on the flat record
+- The password must be at least 8 characters
+- The resident should complete email confirmation through Supabase
+
+### 2. Sign in
+
+Residents sign in from `/login` and are redirected to `/dashboard`.
+
+### 3. Review the current bill
+
+The resident dashboard includes:
+
+- Current billing period
+- Due date
+- Total due
+- Common charges
+- Individual charges
+- Previous due
+- Payment status
+- Recent notifications
+- Recent payments
+
+### 4. Download the PDF statement
+
+Residents can download the monthly statement PDF directly from the current bill page.
+
+### 5. Review history
+
+The `/history` page shows:
+
+- Billing period
+- Common share
+- Individual total
+- Previous due
+- Total due
+- Payment status
+
+### 6. Read notifications
+
+The `/notifications` page includes:
+
+- Bill publication alerts
+- Payment received alerts
+- Timestamped account updates
+
+### 7. Reset password
+
+If needed:
+
+1. Go to `/reset-password`
+2. Enter the linked email
+3. Follow the recovery email
+4. Complete the update form at `/reset-password/update`
+
+## Public Status Board
+
+The public board at `/status` is built for transparency without exposing private account pages.
+
+It supports:
+
+- Search by flat or owner
+- Status filter chips with counts
+- Sortable due, paid, and balance columns
+- Export to Excel
+- Export to PDF
+- Quick access back into the app
+
+Best use cases:
+
+- Sharing collection progress with residents
+- Reviewing unpaid balances quickly
+- Exporting the visible state of the month for reporting
+
+## Installation Guide
+
+### Prerequisites
+
+- Node.js 20 or newer
+- npm
+- A Supabase project
+- Optional: Vercel for deployment
+- Optional: Vercel KV if you want external cache support
+
+### Environment Variables
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Recommended | Base URL for auth redirects and links |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Base URL for redirects and generated links |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes, unless using anon alias | Browser-safe Supabase key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional alternative | Fallback alias for the publishable key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-only admin access for status and secure server operations |
-| `KV_REST_API_URL` | Optional | Enables Vercel KV-backed cache helpers |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Browser-safe Supabase key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-only key for secure operations |
+| `KV_REST_API_URL` | Optional | Enables Vercel KV-backed caching helpers |
+
+### First-Run Checklist
+
+1. Sign in as admin
+2. Add flats and resident emails
+3. Create a billing month
+4. Save common bills
+5. Fill individual bills
+6. Publish the cycle
+7. Record one or more payments
+8. Verify resident dashboard, PDF, notifications, history, and public status board
+
+## Tech Stack
+
+| Component | Role |
+| --- | --- |
+| `Next.js 16` | App Router, routing, server rendering, and API routes |
+| `React 19` | Frontend UI and interactions |
+| `Tailwind CSS 4` | Styling system |
+| `Supabase Auth` | Authentication and account linking |
+| `Supabase PostgreSQL` | Primary database |
+| `TanStack React Query` | Client-side fetching and cache orchestration |
+| `@react-pdf/renderer` | PDF statement generation |
+| `xlsx` | Spreadsheet export |
 
 ## Scripts
 
@@ -400,38 +386,45 @@ npm run start
 npm run lint
 ```
 
-## Project Structure
+## Repository Structure
 
 ```text
 app/                   Next.js App Router pages and API routes
 components/            Admin, resident, shared, and UI components
+docs/                  Production notes and screenshots
 lib/                   Auth, data access, cache, utilities, validators
-supabase/migrations/   Database schema and RLS migrations
-docs/                  Deployment notes and screenshots
+supabase/migrations/   Database schema, RLS, auth, and index migrations
 types/                 Shared TypeScript domain types
 ```
 
 ## Deployment Notes
 
-- Configure the same environment variables in Vercel
+- Add the same environment variables in Vercel
 - Keep `SUPABASE_SERVICE_ROLE_KEY` server-only
-- Set the correct redirect URLs in Supabase Auth
-- Review [docs/PRODUCTION_SETUP.md](./docs/PRODUCTION_SETUP.md) before production launch
+- Configure Supabase Auth redirect URLs correctly
+- Review [`docs/PRODUCTION_SETUP.md`](./docs/PRODUCTION_SETUP.md) before going live
 
 ## Security Notes
 
-- Supabase service role keys must never be sent to the browser
-- Do not commit local env files
-- Use `.env.example` as the only committed template
-- Prefer GitHub secret scanning and private repository settings when possible
+> [!IMPORTANT]
+> Never commit `.env.local`, `.env.production`, service-role keys, private credentials, or raw secret files.
 
-## Tech Stack
+> [!WARNING]
+> If a secret was exposed previously, rotate it before deployment or repository publication.
 
-- Next.js 16 App Router
-- React 19
-- Tailwind CSS 4
-- Supabase Auth
-- Supabase PostgreSQL
-- TanStack React Query
-- `@react-pdf/renderer`
-- `xlsx`
+## Why BillVerse Helps
+
+- Reduces monthly billing friction for building admins
+- Keeps payment tracking consistent
+- Gives residents a simpler self-service experience
+- Improves trust through a transparent public status board
+- Creates a clearer handoff between billing, collections, and resident communication
+
+## Future Ideas
+
+- Editable post-publish correction workflow with audit logs
+- Role-based admin permissions
+- SMS or WhatsApp payment reminders
+- Online payment gateway integration
+- Multi-building support
+- Better analytics for payment trends and collection performance
