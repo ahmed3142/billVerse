@@ -1,6 +1,8 @@
+import { renderToBuffer } from "@react-pdf/renderer";
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
+import { StatusBoardPdfDocument } from "@/components/user/status-board-pdf-document";
 import { getPublicStatusData } from "@/lib/data-service";
 import type { PaymentStatus } from "@/types/domain";
 
@@ -9,6 +11,7 @@ export async function GET(request: NextRequest) {
   const month = Number(searchParams.get("month"));
   const year = Number(searchParams.get("year"));
   const filter = searchParams.get("filter");
+  const format = searchParams.get("format") === "pdf" ? "pdf" : "xlsx";
 
   const data = await getPublicStatusData(
     Number.isFinite(month) && Number.isFinite(year) ? { month, year } : undefined,
@@ -16,6 +19,24 @@ export async function GET(request: NextRequest) {
       ? (filter as PaymentStatus)
       : "all",
   );
+
+  const fileBaseName = `payment-status-${data.period.year}-${String(data.period.month).padStart(2, "0")}`;
+
+  if (format === "pdf") {
+    const buffer = await renderToBuffer(
+      StatusBoardPdfDocument({
+        data,
+        generatedAt: new Date().toISOString(),
+      }),
+    );
+
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileBaseName}.pdf"`,
+      },
+    });
+  }
 
   const workbook = XLSX.utils.book_new();
   const worksheet = XLSX.utils.json_to_sheet(
@@ -37,9 +58,7 @@ export async function GET(request: NextRequest) {
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="payment-status-${data.period.year}-${String(
-        data.period.month,
-      ).padStart(2, "0")}.xlsx"`,
+      "Content-Disposition": `attachment; filename="${fileBaseName}.xlsx"`,
     },
   });
 }

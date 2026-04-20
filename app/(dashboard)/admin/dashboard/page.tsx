@@ -23,7 +23,7 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-3 sm:grid-cols-4">
         <MetricPanel
-          label="Latest cycle"
+          label="Latest month"
           value={
             data.latestPeriod
               ? getMonthLabel(data.latestPeriod.month, data.latestPeriod.year)
@@ -48,7 +48,7 @@ export default async function AdminDashboardPage() {
           valueClassName="text-xl sm:text-2xl"
         />
         <MetricPanel
-          label="Outstanding"
+          label="Remaining"
           value={formatCurrency(data.summary.outstanding)}
           tone="danger"
           detail="Remaining unpaid balance in the latest published cycle."
@@ -59,8 +59,8 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Outstanding balances</CardTitle>
-            <CardDescription>Highest unpaid balances in the latest published cycle.</CardDescription>
+            <CardTitle>Remaining Bills</CardTitle>
+            <CardDescription><br /></CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.topBalances.length === 0 ? (
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Recent payments</CardTitle>
-            <CardDescription>Latest recorded transactions.</CardDescription>
+            <CardDescription><br /></CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.recentPayments.length === 0 ? (

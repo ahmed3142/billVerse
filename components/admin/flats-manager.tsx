@@ -91,7 +91,7 @@ export function FlatsManager({
         <CardHeader>
           <CardTitle>{editingId ? "Edit flat" : "Add flat"}</CardTitle>
           <CardDescription>
-            Assign a resident email before signup so Supabase can link the account to the right flat.
+            <br />
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,7 +166,7 @@ export function FlatsManager({
         <Card>
           <CardHeader>
             <CardTitle>Flat list</CardTitle>
-            <CardDescription>Existing flats and linked app accounts.</CardDescription>
+            <CardDescription><br /></CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {linkedUsers.map(({ flat, user }) => (

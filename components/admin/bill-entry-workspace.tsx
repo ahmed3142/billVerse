@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, RotateCcw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FocusEvent, useEffect, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -21,11 +21,18 @@ import { commonBillSchema } from "@/lib/validators";
 import {
   calculateCommonBillTotal,
   calculateIndividualBillTotal,
+  cn,
   formatCurrency,
   getMonthLabel,
   roundCurrency,
 } from "@/lib/utils";
-import type { BillEntryRow, BillingPeriod, CommonBill } from "@/types/domain";
+import type {
+  BillEntryRow,
+  BillingPeriod,
+  CommonBill,
+  CommonBillFieldKey,
+  IndividualBillFieldKey,
+} from "@/types/domain";
 
 type CommonBillFormValues = z.infer<typeof commonBillSchema>;
 
@@ -37,6 +44,11 @@ interface BillEntryWorkspaceProps {
   rows: BillEntryRow[];
   isPublished: boolean;
 }
+
+const DEFAULT_COMMON_FIELD_KEYS = COMMON_BILL_FIELDS.map((field) => field.key) as CommonBillFieldKey[];
+const DEFAULT_INDIVIDUAL_FIELD_KEYS = INDIVIDUAL_BILL_FIELDS.map(
+  (field) => field.key,
+) as IndividualBillFieldKey[];
 
 function toNumber(value: string) {
   const parsed = Number(value);
@@ -55,6 +67,100 @@ function selectZeroValue(event: FocusEvent<HTMLInputElement>) {
   });
 }
 
+function CriteriaManager<T extends string>({
+  title,
+  description,
+  visibleFields,
+  hiddenFields,
+  onAdd,
+  onRemove,
+  onReset,
+  disabled = false,
+}: {
+  title: string;
+  description: string;
+  visibleFields: Array<{ key: T; label: string }>;
+  hiddenFields: Array<{ key: T; label: string }>;
+  onAdd: (key: T) => void;
+  onRemove: (key: T) => void;
+  onReset: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-[1.4rem] border border-[color:var(--border-strong)] bg-[color:var(--surface-elevated)]/65 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-[color:var(--foreground)]">{title}</p>
+          <p className="text-sm leading-6 text-muted">{description}</p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onReset}
+          disabled={disabled}
+          className="w-full sm:w-auto"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Restore defaults
+        </Button>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Visible now</p>
+          <div className="flex flex-wrap gap-2">
+            {visibleFields.length > 0 ? (
+              visibleFields.map((field) => (
+                <button
+                  key={field.key}
+                  type="button"
+                  onClick={() => onRemove(field.key)}
+                  disabled={disabled}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-semibold text-[color:var(--foreground)] shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--surface-elevated)]",
+                    disabled && "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  {field.label}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[color:var(--border-strong)] px-3 py-2 text-sm text-muted">
+                No criteria selected. Add one back below to resume editing.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {hiddenFields.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Add back</p>
+            <div className="flex flex-wrap gap-2">
+              {hiddenFields.map((field) => (
+                <button
+                  key={field.key}
+                  type="button"
+                  onClick={() => onAdd(field.key)}
+                  disabled={disabled}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border border-dashed border-[color:var(--border-strong)] bg-transparent px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-[color:var(--primary)] hover:text-[color:var(--foreground)]",
+                    disabled && "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {field.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function BillEntryWorkspace({
   period,
   periods,
@@ -70,6 +176,12 @@ export function BillEntryWorkspace({
   const [isSavingRows, startSavingRows] = useTransition();
   const [isSavingCommon, startSavingCommon] = useTransition();
   const [isPublishing, startPublishing] = useTransition();
+  const [visibleCommonFieldKeys, setVisibleCommonFieldKeys] = useState<CommonBillFieldKey[]>(
+    DEFAULT_COMMON_FIELD_KEYS,
+  );
+  const [visibleIndividualFieldKeys, setVisibleIndividualFieldKeys] = useState<
+    IndividualBillFieldKey[]
+  >(DEFAULT_INDIVIDUAL_FIELD_KEYS);
 
   const form = useForm<CommonBillFormValues>({
     resolver: zodResolver(commonBillSchema),
@@ -91,6 +203,18 @@ export function BillEntryWorkspace({
   );
   const saveLabel =
     dirtyFlatIds.length > 0 || isSavingRows ? "Saving..." : lastSaveLabel;
+  const visibleCommonFields = COMMON_BILL_FIELDS.filter((field) =>
+    visibleCommonFieldKeys.includes(field.key),
+  );
+  const hiddenCommonFields = COMMON_BILL_FIELDS.filter(
+    (field) => !visibleCommonFieldKeys.includes(field.key),
+  );
+  const visibleIndividualFields = INDIVIDUAL_BILL_FIELDS.filter((field) =>
+    visibleIndividualFieldKeys.includes(field.key),
+  );
+  const hiddenIndividualFields = INDIVIDUAL_BILL_FIELDS.filter(
+    (field) => !visibleIndividualFieldKeys.includes(field.key),
+  );
 
   useEffect(() => {
     if (dirtyFlatIds.length === 0 || isPublished) {
@@ -122,7 +246,7 @@ export function BillEntryWorkspace({
     router.push(`/admin/bills/new?month=${month}&year=${year}`);
   };
 
-  const updateBillCell = (flatId: string, key: keyof BillEntryRow["bill"], value: number) => {
+  const updateBillCell = (flatId: string, key: IndividualBillFieldKey, value: number) => {
     setTableRows((currentRows) =>
       currentRows.map((row) =>
         row.flat.id === flatId
@@ -142,6 +266,55 @@ export function BillEntryWorkspace({
     );
 
     setDirtyFlatIds((current) => (current.includes(flatId) ? current : [...current, flatId]));
+  };
+
+  const markAllRowsDirty = () => {
+    setDirtyFlatIds((current) => [
+      ...new Set([...current, ...tableRows.map((row) => row.flat.id)]),
+    ]);
+  };
+
+  const addCommonField = (fieldKey: CommonBillFieldKey) => {
+    setVisibleCommonFieldKeys((current) =>
+      DEFAULT_COMMON_FIELD_KEYS.filter((key) => current.includes(key) || key === fieldKey),
+    );
+  };
+
+  const removeCommonField = (fieldKey: CommonBillFieldKey) => {
+    form.setValue(fieldKey, 0, { shouldDirty: true, shouldValidate: true });
+    setVisibleCommonFieldKeys((current) => current.filter((key) => key !== fieldKey));
+  };
+
+  const restoreCommonFields = () => {
+    setVisibleCommonFieldKeys([...DEFAULT_COMMON_FIELD_KEYS]);
+  };
+
+  const addIndividualField = (fieldKey: IndividualBillFieldKey) => {
+    setVisibleIndividualFieldKeys((current) =>
+      DEFAULT_INDIVIDUAL_FIELD_KEYS.filter((key) => current.includes(key) || key === fieldKey),
+    );
+  };
+
+  const removeIndividualField = (fieldKey: IndividualBillFieldKey) => {
+    setTableRows((currentRows) =>
+      currentRows.map((row) => ({
+        ...row,
+        bill: {
+          ...row.bill,
+          [fieldKey]: 0,
+        },
+        total: calculateIndividualBillTotal({
+          ...row.bill,
+          [fieldKey]: 0,
+        }),
+      })),
+    );
+    setVisibleIndividualFieldKeys((current) => current.filter((key) => key !== fieldKey));
+    markAllRowsDirty();
+  };
+
+  const restoreIndividualFields = () => {
+    setVisibleIndividualFieldKeys([...DEFAULT_INDIVIDUAL_FIELD_KEYS]);
   };
 
   const onSaveCommon = form.handleSubmit((values) => {
@@ -174,7 +347,7 @@ export function BillEntryWorkspace({
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <CardTitle>Common bills</CardTitle>
-              <CardDescription>Shared monthly costs for the selected cycle.</CardDescription>
+              <CardDescription><br /></CardDescription>
             </div>
             <select
               defaultValue={`${period.year}-${String(period.month).padStart(2, "0")}`}
@@ -191,9 +364,21 @@ export function BillEntryWorkspace({
               ))}
             </select>
           </CardHeader>
+          <br />
           <CardContent className="space-y-4">
+            <CriteriaManager
+              title="Common bill criteria"
+              description=""
+              visibleFields={visibleCommonFields}
+              hiddenFields={hiddenCommonFields}
+              onAdd={addCommonField}
+              onRemove={removeCommonField}
+              onReset={restoreCommonFields}
+              disabled={isPublished}
+            />
+
             <div className="grid gap-3 sm:grid-cols-2">
-              {COMMON_BILL_FIELDS.map((field) => (
+              {visibleCommonFields.map((field) => (
                 <label key={field.key} className="space-y-2 block">
                   <span className="text-sm font-medium text-[color:var(--foreground)]">{field.label}</span>
                   <Input
@@ -240,7 +425,7 @@ export function BillEntryWorkspace({
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <CardTitle>Monthly summary</CardTitle>
-              <CardDescription>Publish directly once monthly entries are ready.</CardDescription>
+              <CardDescription><br /></CardDescription>
             </div>
             <div className="text-right text-sm">
               <p className="text-muted">Table status</p>
@@ -286,17 +471,28 @@ export function BillEntryWorkspace({
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <CardTitle>Individual bills</CardTitle>
-            <CardDescription>Per-flat charges update automatically after 500ms.</CardDescription>
+            <CardDescription><br /></CardDescription>
           </div>
           <p className="text-sm text-muted">{saveLabel}</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <CriteriaManager
+            title="Individual bill criteria"
+            description=""
+            visibleFields={visibleIndividualFields}
+            hiddenFields={hiddenIndividualFields}
+            onAdd={addIndividualField}
+            onRemove={removeIndividualField}
+            onReset={restoreIndividualFields}
+            disabled={isPublished}
+          />
+
           <div className="hidden overflow-x-auto lg:block">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--border)] text-muted">
                   <th className="px-3 py-3 font-medium">Flat</th>
-                  {INDIVIDUAL_BILL_FIELDS.map((field) => (
+                  {visibleIndividualFields.map((field) => (
                     <th key={field.key} className="px-3 py-3 font-medium">
                       {field.label}
                     </th>
@@ -314,7 +510,7 @@ export function BillEntryWorkspace({
                       </div>
                       <div className="text-xs text-muted">{row.flat.ownerName}</div>
                     </td>
-                    {INDIVIDUAL_BILL_FIELDS.map((field) => (
+                    {visibleIndividualFields.map((field) => (
                       <td key={field.key} className="px-3 py-3">
                         <Input
                           type="number"
@@ -348,7 +544,7 @@ export function BillEntryWorkspace({
                   <p className="text-sm text-muted">{row.flat.ownerName}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {INDIVIDUAL_BILL_FIELDS.map((field) => (
+                  {visibleIndividualFields.map((field) => (
                     <label key={field.key} className="space-y-2 block">
                       <span className="text-sm font-medium text-[color:var(--foreground)]">
                         {field.label}

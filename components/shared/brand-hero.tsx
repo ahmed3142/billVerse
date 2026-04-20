@@ -34,20 +34,24 @@ export function BrandHero({
     }
 
     const syncCompactState = () => {
-      setIsCompact(window.scrollY > 72);
+      setIsCompact(window.matchMedia("(min-width: 768px)").matches && window.scrollY > 72);
     };
 
     syncCompactState();
     window.addEventListener("scroll", syncCompactState, { passive: true });
+    window.addEventListener("resize", syncCompactState);
 
-    return () => window.removeEventListener("scroll", syncCompactState);
+    return () => {
+      window.removeEventListener("scroll", syncCompactState);
+      window.removeEventListener("resize", syncCompactState);
+    };
   }, [collapsibleOnScroll]);
 
   return (
     <section
       className={cn(
         "relative rounded-[2rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/95 p-6 shadow-[var(--shadow-strong)] backdrop-blur transition-[padding,border-radius,box-shadow] duration-300 xl:p-8",
-        collapsibleOnScroll && "sticky top-4 z-30",
+        collapsibleOnScroll && "md:sticky md:top-4 md:z-30",
         isCompact && "rounded-[1.6rem] p-4 sm:p-5",
         className,
       )}

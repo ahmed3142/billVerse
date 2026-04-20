@@ -13,5 +13,5 @@ export default async function AdminBillsPage({
     Number.isFinite(month) && Number.isFinite(year) ? { month, year } : undefined,
   );
 
-  return <BillEntryWorkspace {...data} />;
+  return <BillEntryWorkspace key={`${data.period.year}-${data.period.month}`} {...data} />;
 }

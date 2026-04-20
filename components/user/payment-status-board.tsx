@@ -6,6 +6,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   Download,
+  FileText,
   LayoutList,
   Search,
   Sparkles,
@@ -86,7 +87,7 @@ export function PaymentStatusBoard({
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("balance");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "pdf" | null>(null);
   const deferredFilter = useDeferredValue(filter);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
@@ -134,14 +135,15 @@ export function PaymentStatusBoard({
   const isSearchEmpty = deferredSearch.length > 0 && visibleRows.length === 0;
   const isFilterEmpty = deferredSearch.length === 0 && data.rows.length === 0;
 
-  async function handleExport() {
-    setIsExporting(true);
+  async function handleExport(format: "xlsx" | "pdf") {
+    setExportFormat(format);
 
     try {
       const searchParams = new URLSearchParams({
         month: String(selectedPeriod.month),
         year: String(selectedPeriod.year),
         filter: deferredFilter,
+        format,
       });
       const response = await fetch(`/api/status/export?${searchParams.toString()}`);
 
@@ -153,16 +155,20 @@ export function PaymentStatusBoard({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `payment-status-${selectedPeriod.year}-${String(selectedPeriod.month).padStart(2, "0")}.xlsx`;
+      link.download = `payment-status-${selectedPeriod.year}-${String(selectedPeriod.month).padStart(2, "0")}.${format}`;
       document.body.append(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Payment status export downloaded.");
+      toast.success(
+        format === "pdf"
+          ? "Payment status PDF downloaded."
+          : "Payment status spreadsheet downloaded.",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Export failed.");
     } finally {
-      setIsExporting(false);
+      setExportFormat(null);
     }
   }
 
@@ -196,12 +202,12 @@ export function PaymentStatusBoard({
                   {getMonthLabel(data.period.month, data.period.year)}
                 </CardTitle>
                 <CardDescription className="mt-2 max-w-2xl leading-7">
-                  Published resident balances, payment progress, and outstanding totals for the active billing cycle.
+                  {/* Published resident balances, payment progress, and outstanding totals for the active billing cycle. */}
                 </CardDescription>
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface-elevated)]/90 px-4 py-2 text-sm text-muted shadow-[var(--shadow-soft)] xl:justify-self-end">
+            <div className="inline-flex w-full flex-wrap items-center gap-2 self-start rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface-elevated)]/90 px-4 py-2 text-sm text-muted shadow-[var(--shadow-soft)] sm:w-auto xl:justify-self-end">
               <Sparkles className="h-4 w-4 text-[color:var(--accent)]" />
               <span>
                 {data.lastUpdated ? `Last updated ${formatDateTime(data.lastUpdated)}` : "Waiting for the first published update"}
@@ -209,7 +215,7 @@ export function PaymentStatusBoard({
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricPanel
               label="Collected"
               value={formatCurrency(data.summary.totalCollected)}
@@ -256,18 +262,21 @@ export function PaymentStatusBoard({
       <Card>
         <CardContent className="space-y-5 pt-5 sm:pt-6">
           <div className="space-y-5 rounded-[1.6rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/94 p-4 shadow-[var(--shadow-strong)] backdrop-blur-xl sm:p-5">
-            <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-end 2xl:justify-between">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--foreground)]">
+                {/* <div className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--foreground)]">
                   <LayoutList className="h-4 w-4 text-[color:var(--primary)]" />
                   Payment status board
-                </div>
+                </div> */}
+                <CardTitle className="text-3xl sm:text-4xl">
+                  Payment Status Board
+                </CardTitle>
                 <p className="max-w-2xl text-sm leading-6 text-muted">
-                  Search any flat or owner, switch months, and sort the largest balances to the top for faster follow-up.
+                   
                 </p>
               </div>
 
-              <div className="grid w-full gap-3 lg:grid-cols-[11rem_minmax(0,1fr)] xl:items-end">
+              <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:min-w-[30rem]">
                 <label className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Month</span>
                   <select
@@ -301,32 +310,10 @@ export function PaymentStatusBoard({
                     />
                   </div>
                 </label>
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2 lg:justify-self-end xl:w-auto">
-                  <Button
-                    type="button"
-                    size="lg"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                    className="w-full sm:min-w-[10.5rem]"
-                  >
-                    <Download className="h-4 w-4" />
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
-                  <Link
-                    href={appHref}
-                    className={cn(
-                      buttonVariants({ size: "lg", variant: "secondary" }),
-                      "w-full sm:min-w-[10.5rem] no-underline",
-                    )}
-                  >
-                    {appLabel}
-                  </Link>
-                </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap">
                 {STATUS_OPTIONS.map((option) => {
                   const statusTone =
@@ -357,18 +344,56 @@ export function PaymentStatusBoard({
                 })}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
-                <span>
-                  Showing {visibleRows.length} of {counts[filter]} flats
-                </span>
+              <div className="grid gap-3 sm:grid-cols-3 xl:w-auto">
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() => handleExport("xlsx")}
+                  disabled={exportFormat !== null}
+                  className="w-full sm:min-w-[10.5rem]"
+                >
+                  <Download className="h-4 w-4" />
+                  {exportFormat === "xlsx" ? "Exporting..." : "Export XLSX"}
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="secondary"
+                  onClick={() => handleExport("pdf")}
+                  disabled={exportFormat !== null}
+                  className="w-full sm:min-w-[10.5rem]"
+                >
+                  <FileText className="h-4 w-4" />
+                  {exportFormat === "pdf" ? "Exporting..." : "Export PDF"}
+                </Button>
+                <Link
+                  href={appHref}
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "secondary" }),
+                    "w-full sm:min-w-[10.5rem] no-underline",
+                  )}
+                >
+                  {appLabel}
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Showing {visibleRows.length} of {counts[filter]} flats
+              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* <span>Default sort: highest balance first</span> */}
                 {search ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSearch("")}
-                    className="font-semibold text-[color:var(--primary)]"
+                    className="h-auto px-0 py-0 font-semibold text-[color:var(--primary)] shadow-none hover:bg-transparent"
                   >
                     Clear search
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </div>
@@ -532,30 +557,32 @@ export function PaymentStatusBoard({
                     key={row.statementId}
                     className="rounded-[1.6rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/92 p-4 shadow-[var(--shadow-soft)]"
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="font-display text-xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
                           {row.flatNumber}
                         </p>
                         <p className="mt-1 text-sm text-muted">{row.ownerName}</p>
                       </div>
-                      <StatusBadge status={row.paymentStatus} />
+                      <div className="self-start">
+                        <StatusBadge status={row.paymentStatus} />
+                      </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-3 rounded-[1.25rem] bg-[color:var(--surface-elevated)]/80 p-3">
-                      <div>
+                    <div className="mt-4 grid gap-3 rounded-[1.25rem] bg-[color:var(--surface-elevated)]/80 p-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-[color:var(--border)]/70 bg-[color:var(--surface)]/70 p-3 sm:border-none sm:bg-transparent sm:p-0">
                         <p className="text-xs uppercase tracking-[0.14em] text-muted">Due</p>
                         <p className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
                           {formatCurrency(row.totalDue)}
                         </p>
                       </div>
-                      <div>
+                      <div className="rounded-xl border border-[color:var(--border)]/70 bg-[color:var(--surface)]/70 p-3 sm:border-none sm:bg-transparent sm:p-0">
                         <p className="text-xs uppercase tracking-[0.14em] text-muted">Paid</p>
                         <p className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
                           {formatCurrency(row.amountPaid)}
                         </p>
                       </div>
-                      <div>
+                      <div className="rounded-xl border border-[color:var(--border)]/70 bg-[color:var(--surface)]/70 p-3 sm:border-none sm:bg-transparent sm:p-0">
                         <p className="text-xs uppercase tracking-[0.14em] text-muted">Balance</p>
                         <p className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
                           {formatCurrency(row.balance)}

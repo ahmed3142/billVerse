@@ -28,7 +28,7 @@ export function MetricPanel({
   return (
     <div
       className={cn(
-        "group relative z-0 rounded-[1.6rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/92 p-4 shadow-[var(--shadow-soft)] transition duration-200 hover:-translate-y-0.5 hover:z-20 hover:shadow-[var(--shadow-strong)] focus-within:z-20 focus-within:shadow-[var(--shadow-strong)]",
+        "group relative z-0 rounded-[1.6rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/92 p-4 shadow-[var(--shadow-soft)] transition duration-200 hover:-translate-y-0.5 hover:z-20 hover:shadow-[var(--shadow-strong)] focus-within:z-20 focus-within:shadow-[var(--shadow-strong)] sm:p-5",
         className,
       )}
     >
@@ -40,7 +40,7 @@ export function MetricPanel({
       />
 
       {detail ? (
-        <div className="pointer-events-none absolute inset-x-4 bottom-[calc(100%-0.5rem)] z-30 translate-y-2 opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div className="pointer-events-none absolute inset-x-4 bottom-[calc(100%-0.5rem)] z-30 hidden translate-y-2 opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 md:block">
           <div className="rounded-[1.15rem] border border-[color:var(--border-strong)] bg-[color:var(--surface)]/98 px-3.5 py-3 text-sm leading-6 text-muted shadow-[var(--shadow-strong)] backdrop-blur">
             {detail}
           </div>
@@ -54,6 +54,7 @@ export function MetricPanel({
             <button
               type="button"
               aria-label={`${label} details`}
+              title={detail}
               className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface)]/80 text-[color:var(--muted)] outline-none transition hover:text-[color:var(--foreground)] focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]"
             >
               <CircleHelp className="h-3.5 w-3.5" />
@@ -64,7 +65,7 @@ export function MetricPanel({
         <div className="space-y-2">
           <div
             className={cn(
-              "font-display text-3xl font-semibold tracking-[-0.04em] text-[color:var(--foreground)]",
+              "break-words font-display text-2xl font-semibold tracking-[-0.04em] text-[color:var(--foreground)] sm:text-3xl",
               valueClassName,
             )}
           >

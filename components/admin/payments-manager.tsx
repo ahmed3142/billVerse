@@ -98,6 +98,7 @@ export function PaymentsManager({
           <div>
             <CardTitle>Collection summary</CardTitle>
             <CardDescription>{getMonthLabel(period.month, period.year)}</CardDescription>
+            <br />
           </div>
           <select
             defaultValue={`${period.year}-${String(period.month).padStart(2, "0")}`}
