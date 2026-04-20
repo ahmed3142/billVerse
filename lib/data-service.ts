@@ -473,17 +473,8 @@ async function getLinkedFlatId(supabase: ServerSupabaseClient, userId: string) {
   return flatId;
 }
 
-export async function getBillEntryData(requested?: Partial<BillingPeriod>) {
-  const supabase = await createSupabaseServerClient();
-  const allPeriods = await fetchPeriods(false);
-  const draftPeriod = await getLatestDraftPeriod();
-  const currentPeriod = getCurrentPeriod();
-  const period =
-    requested?.month && requested?.year
-      ? { month: requested.month, year: requested.year }
-      : draftPeriod ?? currentPeriod;
-  const periods = ensurePeriod(allPeriods, period);
-
+async function fetchBillEntrySnapshot(period: BillingPeriod) {
+  const supabase = createSupabaseAdminClient();
   const [{ data: flatsData, error: flatsError }, { data: commonBillData, error: commonBillError }, { data: individualData, error: individualError }] =
     await Promise.all([
       supabase
@@ -559,14 +550,50 @@ export async function getBillEntryData(requested?: Partial<BillingPeriod>) {
   });
 
   return {
-    period,
-    periods,
     commonBill,
     commonTotal,
     commonShare,
     activeFlatCount: flats.length,
     rows,
     isPublished: commonBill.isPublished,
+  };
+}
+
+async function getCachedBillEntrySnapshot(period: BillingPeriod) {
+  const previousPeriod = getPreviousPeriod(period);
+  const getCachedForPeriod = unstable_cache(
+    async () => fetchBillEntrySnapshot(period),
+    ["bill-entry", `${period.year}-${period.month}`],
+    {
+      revalidate: 60,
+      tags: [
+        cacheTags.billEntry(period.month, period.year),
+        cacheTags.flats,
+        cacheTags.periods,
+        cacheTags.statements(period.month, period.year),
+        cacheTags.statements(previousPeriod.month, previousPeriod.year),
+      ],
+    },
+  );
+
+  return getCachedForPeriod();
+}
+
+export async function getBillEntryData(requested?: Partial<BillingPeriod>) {
+  const allPeriods = await fetchPeriods(false);
+  const draftPeriod = await getLatestDraftPeriod();
+  const currentPeriod = getCurrentPeriod();
+  const period =
+    requested?.month && requested?.year
+      ? { month: requested.month, year: requested.year }
+      : draftPeriod ?? currentPeriod;
+  const periods = ensurePeriod(allPeriods, period);
+  const snapshot = await getCachedBillEntrySnapshot(period);
+
+  return {
+    period,
+    periods,
+    ...snapshot,
   };
 }
 
@@ -811,10 +838,8 @@ export async function getAdminDashboardData() {
   return getCachedAdminDashboardData();
 }
 
-export async function getPaymentsPageData(requested?: Partial<BillingPeriod>) {
-  const supabase = await createSupabaseServerClient();
-  const { period, periods } = await resolvePeriod(requested, true);
-
+async function fetchPaymentsPageSnapshot(period: BillingPeriod) {
+  const supabase = createSupabaseAdminClient();
   const [
     { data: statementsData, error: statementsError },
     { data: flatsData, error: flatsError },
@@ -904,8 +929,6 @@ export async function getPaymentsPageData(requested?: Partial<BillingPeriod>) {
     .sort((left, right) => left!.flat.flatNumber.localeCompare(right!.flat.flatNumber));
 
   return {
-    period,
-    periods,
     rows: rows as Array<{
       statement: MonthlyStatement;
       flat: Flat;
@@ -915,6 +938,35 @@ export async function getPaymentsPageData(requested?: Partial<BillingPeriod>) {
     summary: buildCollectionSummary(
       (rows as Array<{ statement: MonthlyStatement }>).map((row) => row.statement),
     ),
+  };
+}
+
+async function getCachedPaymentsPageSnapshot(period: BillingPeriod) {
+  const getCachedForPeriod = unstable_cache(
+    async () => fetchPaymentsPageSnapshot(period),
+    ["payments-page", `${period.year}-${period.month}`],
+    {
+      revalidate: 60,
+      tags: [
+        cacheTags.flats,
+        cacheTags.periods,
+        cacheTags.statements(period.month, period.year),
+        cacheTags.status(period.month, period.year),
+      ],
+    },
+  );
+
+  return getCachedForPeriod();
+}
+
+export async function getPaymentsPageData(requested?: Partial<BillingPeriod>) {
+  const { period, periods } = await resolvePeriod(requested, true);
+  const snapshot = await getCachedPaymentsPageSnapshot(period);
+
+  return {
+    period,
+    periods,
+    ...snapshot,
   };
 }
 
@@ -1019,37 +1071,48 @@ export async function recordPayment(input: PaymentInput, actorId: string) {
   };
 }
 
+const getCachedFlatsPageData = unstable_cache(
+  async () => {
+    const supabase = createSupabaseAdminClient();
+    const [{ data: flatsData, error: flatsError }, { data: usersData, error: usersError }] =
+      await Promise.all([
+        supabase
+          .from("flats")
+          .select("id, flat_number, owner_name, phone, email, is_active, created_at")
+          .order("flat_number", { ascending: true }),
+        supabase.from("users").select("id, flat_id"),
+      ]);
+
+    if (flatsError || usersError) {
+      throw new Error(flatsError?.message ?? usersError?.message ?? "Failed to load flats.");
+    }
+
+    const userLookup = new Map(
+      ((usersData ?? []) as Array<{ id: string; flat_id: string | null }>).map((row) => [
+        row.flat_id,
+        row.id,
+      ]),
+    );
+    const flats = sortFlats(((flatsData ?? []) as DbFlatRow[]).map(mapFlat));
+
+    return {
+      linkedUsers: flats.map((flat) => ({
+        flat,
+        user: userLookup.has(flat.id) ? { id: userLookup.get(flat.id)! } : null,
+      })),
+      activeCount: flats.filter((flat) => flat.isActive).length,
+      totalCount: flats.length,
+    };
+  },
+  ["flats-page"],
+  {
+    revalidate: 60,
+    tags: [cacheTags.flats, cacheTags.adminDashboard],
+  },
+);
+
 export async function getFlatsPageData() {
-  const supabase = await createSupabaseServerClient();
-  const [{ data: flatsData, error: flatsError }, { data: usersData, error: usersError }] =
-    await Promise.all([
-      supabase
-        .from("flats")
-        .select("id, flat_number, owner_name, phone, email, is_active, created_at")
-        .order("flat_number", { ascending: true }),
-      supabase.from("users").select("id, flat_id"),
-    ]);
-
-  if (flatsError || usersError) {
-    throw new Error(flatsError?.message ?? usersError?.message ?? "Failed to load flats.");
-  }
-
-  const userLookup = new Map(
-    ((usersData ?? []) as Array<{ id: string; flat_id: string | null }>).map((row) => [
-      row.flat_id,
-      row.id,
-    ]),
-  );
-  const flats = sortFlats(((flatsData ?? []) as DbFlatRow[]).map(mapFlat));
-
-  return {
-    linkedUsers: flats.map((flat) => ({
-      flat,
-      user: userLookup.has(flat.id) ? { id: userLookup.get(flat.id)! } : null,
-    })),
-    activeCount: flats.filter((flat) => flat.isActive).length,
-    totalCount: flats.length,
-  };
+  return getCachedFlatsPageData();
 }
 
 export async function saveFlat(input: FlatInput) {

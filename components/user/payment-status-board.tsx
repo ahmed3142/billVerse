@@ -7,7 +7,6 @@ import {
   ArrowUpDown,
   Download,
   FileText,
-  LayoutList,
   Search,
   Sparkles,
   TriangleAlert,
@@ -35,11 +34,12 @@ import type {
 type SortKey = "totalDue" | "amountPaid" | "balance";
 type SortDirection = "asc" | "desc";
 
-async function fetchStatus(period: BillingPeriod, filter: PaymentStatus | "all") {
+const STATUS_BOARD_REFRESH_MS = 60_000;
+
+async function fetchStatus(period: BillingPeriod) {
   const search = new URLSearchParams({
     month: String(period.month),
     year: String(period.year),
-    filter,
   });
   const response = await fetch(`/api/status?${search.toString()}`);
 
@@ -88,14 +88,16 @@ export function PaymentStatusBoard({
   const [sortKey, setSortKey] = useState<SortKey>("balance");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [exportFormat, setExportFormat] = useState<"xlsx" | "pdf" | null>(null);
-  const deferredFilter = useDeferredValue(filter);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
   const query = useQuery({
-    queryKey: ["status-board", selectedPeriod.year, selectedPeriod.month, deferredFilter],
-    queryFn: () => fetchStatus(selectedPeriod, deferredFilter),
+    queryKey: ["status-board", selectedPeriod.year, selectedPeriod.month],
+    queryFn: () => fetchStatus(selectedPeriod),
     initialData,
     placeholderData: (previousData) => previousData,
+    staleTime: STATUS_BOARD_REFRESH_MS,
+    refetchInterval: STATUS_BOARD_REFRESH_MS,
+    refetchIntervalInBackground: false,
   });
 
   const data = query.data ?? initialData;
@@ -118,7 +120,9 @@ export function PaymentStatusBoard({
     toast.error(query.error instanceof Error ? query.error.message : "Could not refresh the status board.");
   }, [query.error]);
 
-  const visibleRows = data.rows
+  const filteredRows = data.rows.filter((row) => filter === "all" || row.paymentStatus === filter);
+
+  const visibleRows = filteredRows
     .filter((row) => {
       if (!deferredSearch) {
         return true;
@@ -133,7 +137,7 @@ export function PaymentStatusBoard({
     });
 
   const isSearchEmpty = deferredSearch.length > 0 && visibleRows.length === 0;
-  const isFilterEmpty = deferredSearch.length === 0 && data.rows.length === 0;
+  const isFilterEmpty = deferredSearch.length === 0 && filteredRows.length === 0;
 
   async function handleExport(format: "xlsx" | "pdf") {
     setExportFormat(format);
@@ -142,7 +146,7 @@ export function PaymentStatusBoard({
       const searchParams = new URLSearchParams({
         month: String(selectedPeriod.month),
         year: String(selectedPeriod.year),
-        filter: deferredFilter,
+        filter,
         format,
       });
       const response = await fetch(`/api/status/export?${searchParams.toString()}`);
@@ -247,7 +251,7 @@ export function PaymentStatusBoard({
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-[color:var(--foreground)]">Collection progress</p>
                 <p className="text-sm text-muted">
-                  {formatCurrency(data.summary.totalCollected)} of {formatCurrency(data.summary.totalDue)} collected
+                  {/* {formatCurrency(data.summary.totalCollected)} of {formatCurrency(data.summary.totalDue)} collected */}
                 </p>
               </div>
               <p className="text-sm font-semibold text-[color:var(--foreground)]">
@@ -358,7 +362,6 @@ export function PaymentStatusBoard({
                 <Button
                   type="button"
                   size="lg"
-                  variant="secondary"
                   onClick={() => handleExport("pdf")}
                   disabled={exportFormat !== null}
                   className="w-full sm:min-w-[10.5rem]"
